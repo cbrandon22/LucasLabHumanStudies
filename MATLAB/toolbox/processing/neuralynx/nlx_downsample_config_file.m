@@ -1,0 +1,10 @@
+downsampleStruct.dataMotherDir     = '/data/eeg';
+downsampleStruct.logFileName       = 'CheetahLogFile.txt'; 
+downsampleStruct.targetSampleRate  = 2000;
+downsampleStruct.recType           = 'cheetah';
+downsampleStruct.evFile            = 'Events.nev';
+downsampleStruct.fileExt           = 'ncs';
+downsampleStruct.minBytesInFile    = 20000;
+downsampleStruct.engineersNyquist  = 2/5;
+downsampleStruct.lowPassType       = 'BUTTER';
+downsampleStruct.lowPassOrder      = 4;

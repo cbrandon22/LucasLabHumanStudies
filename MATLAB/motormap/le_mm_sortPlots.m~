@@ -1,0 +1,55 @@
+% Sort individual electrode plots by cluster
+subjList = {'HUP084','HUP087','HUP091','HUP092','HUP111'};
+
+dirs = le_dirs;
+config_mm = le_mm_config;
+[eInfoStruct] = le_mm_readElecInfo;
+
+for i=1:length(subjList)
+    subj = subjList{i};
+    plotDir = fullfile(dirs.scratch,'figs','motormap',subj,'all','moveWait-motor','clustered');
+    % Build eLbl_list for each cluster separately
+    eLbl_list_clus1 = {};
+    eLbl_list_clus2 = {};
+    eLbl_list_clus0 = {};
+    for j=1:length(eInfoStruct)
+        if strcmp(eInfoStruct(j).subj,subj) && eInfoStruct(j).cluster == 1
+            [eLbl_list_clus1] = [eLbl_list_clus1, strcat(num2str(eInfoStruct(j).eLbl1),'-',num2str(eInfoStruct(j).eLbl2))];
+        elseif strcmp(eInfoStruct(j).subj,subj) && eInfoStruct(j).cluster == 2
+            [eLbl_list_clus2] = [eLbl_list_clus2, strcat(num2str(eInfoStruct(j).eLbl1),'-',num2str(eInfoStruct(j).eLbl2))];
+        elseif strcmp(eInfoStruct(j).subj,subj) && eInfoStruct(j).cluster == 0
+            [eLbl_list_clus0] = [eLbl_list_clus0, strcat(num2str(eInfoStruct(j).eLbl1),'-',num2str(eInfoStruct(j).eLbl2))];
+        end
+    end
+    
+    plotDir = fullfile(dirs.scratch,'figs','motormap',subj,'all','moveWait-motor','TF-3-to-200');
+    cd(plotDir);
+%     for ii=1:length(eLbl_list_clus0)
+%         if ii==1
+%             destDir = fullfile(plotDir,'cluster0')
+%             if ~exist(destDir,'dir'),mkdir(destDir);end
+%         end
+%         elecFile = fullfile(plotDir,strcat(eLbl_list_clus0{ii},'.png'));
+%         if exist(elecFile,'file'),movefile(elecFile,destDir);end
+%     end
+    for ii=1:length(eLbl_list_clus1)
+        if ii==1
+            destDir = fullfile(plotDir,'cluster1');
+            if ~exist(destDir,'dir'),mkdir(destDir);end
+        end
+        elecFile = fullfile(plotDir,strcat(eLbl_list_clus1{ii},'.png'));
+        if exist(elecFile,'file')
+            movefile(elecFile,destDir);
+        else
+            warning(strcat(eLbl_list_clus1{ii},'.png',' not found'));
+        end
+    end
+    for ii=1:length(eLbl_list_clus2)
+        if ii==1
+            destDir = fullfile(plotDir,'cluster2');
+            if ~exist(destDir,'dir'),mkdir(destDir);end
+        end
+        elecFile = fullfile(plotDir,strcat(eLbl_list_clus2{ii},'.png'));
+        if exist(elecFile,'file'),movefile(elecFile,destDir);end
+    end
+end
