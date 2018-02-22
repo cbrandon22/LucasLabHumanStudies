@@ -1,7 +1,7 @@
 task = 'CCDT';
 subjList = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
-    'HUP154','HUP157'};
+    'HUP154'};
 dirs = le_dirs(task);
 for sub=1:length(subjList)
     load(fullfile(dirs.events,[subjList{sub} '_events']));
@@ -17,6 +17,6 @@ for sub=1:length(subjList)
             end
         end
     end
-    save([subjList{sub} '_events.mat']);
+    save(fullfile(dirs.events,[subjList{sub} '_events.mat']),'events');
 end
 disp('done')
