@@ -1,9 +1,10 @@
 task = 'CCDT';
-subjList = {'HUP140'};
+subjList = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
+    'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
+    'HUP154','HUP157'};
 dirs = le_dirs(task);
-cd(dirs.events)
 for sub=1:length(subjList)
-    load([subjList{sub} '_events']);
+    load(fullfile(dirs.events,[subjList{sub} '_events']));
     for i=1:length(events)
         if ~isempty(events(i).eegfile)
             thisEEGfile = events(i).eegfile;

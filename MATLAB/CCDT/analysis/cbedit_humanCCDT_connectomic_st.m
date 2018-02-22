@@ -1,12 +1,14 @@
 % CCDT Human Connectomic Analysis
 
-%%Inputs
-ddir = '/Volumes/HumanStudies/HumanStudies/CCDT/';
-allSubj = {};
+%% Inputs
+ddir = '/Volumes/HumanStudies/HumanStudies/CCDT'; % should contain events/ and eeg/ folders
+allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
+    'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
+    'HUP154','HUP157'};
 saveon=0;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
 lpc=200;
-fs=512;
+fs=512; % sample rate
 twin=0.5; % milliseconds for single-trial PLV sliding window
 
 %trial window settings
@@ -16,14 +18,14 @@ bufferMS=1000;
 resampleFreq=512;
 bT = .300; %(s) buffer time after end of DT
 
-%%
-for iji = length(allSubj) %loop through each subject
+%% CCDT Connectomics subject loop
+for iji=1:length(allSubj)
     subj = allSubj{iji}; %subject name string vector
     disp(subj)
     disp('load events...')
-    load([ddir subj '_events.mat']);
+    load(fullfile(ddir, 'events',[subj '_events.mat']));
     
-    fid = fopen([ddir subj '/docs/jacksheet.txt']);
+    fid = fopen(fullfile(ddir,'eeg',subj, 'docs/jacksheet.txt'));
     C = textscan(fid,'%s');
     fclose(fid);
     JAC{:,1} = C{1}(1:2:end-1);
