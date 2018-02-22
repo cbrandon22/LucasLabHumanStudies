@@ -1,32 +1,37 @@
 % CCDT Human Connectomic Analysis
-for iji = 6 % number of subjects
+
+%%Inputs
+ddir = '/Volumes/HumanStudies/HumanStudies/CCDT/';
+allSubj = {};
+saveon=0;
+bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
+lpc=200;
+fs=512;
+twin=0.5; % milliseconds for single-trial PLV sliding window
+
+%trial window settings
+durationMS=3000;
+offsetMS=-1000;
+bufferMS=1000;
+resampleFreq=512;
+bT = .300; %(s) buffer time after end of DT
+
+%%
+for iji = length(allSubj) %loop through each subject
     subj = allSubj{iji}; %subject name string vector
     disp(subj)
-    saveon=0;
-    bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
-    lpc=200;
-    fs=512;
-    twin=0.5; % milliseconds for single-trial PLV sliding window
-    
-    %%
     disp('load events...')
-    load(['D:\CCDT\events\' subj '_events.mat']);
+    load([ddir subj '_events.mat']);
     
-    fid = fopen(['D:\CCDT\eeg\' subj '\docs\jacksheet.txt']);
+    fid = fopen([ddir subj '/docs/jacksheet.txt']);
     C = textscan(fid,'%s');
     fclose(fid);
     JAC{:,1} = C{1}(1:2:end-1);
     JAC{:,2} = C{1}(2:2:end);
-    
-    durationMS=3000;
-    offsetMS=-1000;
-    bufferMS=1000;
-    resampleFreq=512;
+
     chrec = cellfun(@str2double, JAC{1});
     chlbl = JAC{2};
     
-    
-    bT = .300; %(s) buffer time after end of DT
     type=cell(1, length(events));
     vRT = NaN(length(events),1); % vector of RTs per trial over sessions
     vDT = NaN(length(events),1); % vector of DTs per trial over sessions
