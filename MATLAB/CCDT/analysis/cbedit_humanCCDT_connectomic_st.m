@@ -2,10 +2,11 @@
 
 %% Inputs
 ddir = '/Volumes/HumanStudies/HumanStudies/CCDT'; % should contain events/ and eeg/ folders
+saveDir = '/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity';
 allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
     'HUP154','HUP157'};
-saveon=0;
+saveon=1;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
 lpc=200; % low-pass cut-off frequency for butterworth filter: wn=lpc/(fs/2)
 fs=512; % sample rate
@@ -17,6 +18,14 @@ offsetMS=-1000;
 bufferMS=1000;
 resampleFreq=512;
 bT = .300; %(s) buffer time after end of DT
+
+%filter specifications for PLV
+filtSpec(1).range = [3 12];
+filtSpec(1).order = 250;
+filtSpec(1).name = 'theta';
+filtSpec(2).range = [70 100];
+filtSpec(2).order = 50;
+filtSpec(2).name = 'gamma';
 
 %% CCDT Connectomics subject loop
 for iji=1:length(allSubj)
@@ -150,26 +159,20 @@ for iji=1:length(allSubj)
         end
     end
     
-    fT.range=[3 12];
-    fT.order=250;
-    fG.range=[70 100];
-    fG.order=50;
-    
     disp('Performing single trial connectivity analysis...')
     
     
     %% Create adj_matrix using stPLV
     W_st = struct;
     eTs = {'tBind' 'tDTind1' 'tDTind2' 'tDTind3'};
-    for freq = 1:2     % bandpass
-        switch freq
-            case 1 %theta
-                [cstplv] = stPLV(cDat,512,fT,twin);
-            case 2 %high gamma
-                [cstplv] = stPLV(cDat,512,fG,twin);
-        end
+    for freq = 1:length(filtSpec)     % bandpass
+        disp([filtSpec(freq).name ' frequency'])
+        fSpec.range = filtSpec(freq).range;
+        fSpec.order = filtSpec(freq).order;
+        cstplv = stPLV(cDat,512,fSpec,twin);
         for xi = 1:length(eTs)
             eTi = eval(eTs{xi});
+            disp(eTs{xi})
             for ai=1:size(cDat,3)
                 cW=threshold_proportional(squeeze(mean(cstplv(ai).plv(eTi,:,:), 'omitnan')),1);
                 A = cW;
@@ -178,64 +181,35 @@ for iji=1:length(allSubj)
                 B(1:n+1:end)=diag(A);
                 cW = B;
                 
-                disp(eTs{xi})
                 switch eTs{xi}
                     case 'tBind'
                         Wtwin = [-500 0];
-                        switch freq
-                            case 1 %theta
-                                W_st(ai).precue.theta.adj = cW;
-                                W_st(ai).precue.theta.twin = Wtwin;
-                                W_st(ai).precue.theta.trial = ai;
-                                W_st(ai).precue.theta.RT = vRT(ai);
-                            case 2 %high gamma
-                                W_st(ai).precue.gamma.adj = cW;
-                                W_st(ai).precue.gamma.twin = Wtwin;
-                                W_st(ai).precue.gamma.trial = ai;
-                                W_st(ai).precue.gamma.RT = vRT(ai);
-                        end
+                        W_st(ai).precue(freq).fRng = filtSpec(freq).range;
+                        W_st(ai).precue(freq).adj = cW;
+                        W_st(ai).precue(freq).twin = Wtwin;
+                        W_st(ai).precue(freq).trial = ai;
+                        W_st(ai).precue(freq).RT = vRT(ai);
                     case 'tDTind1'
                         Wtwin = [0 500];
-                        switch freq
-                            case 1 %theta
-                                W_st(ai).DTone.theta.adj = cW;
-                                W_st(ai).DTone.theta.twin = Wtwin;
-                                W_st(ai).DTone.theta.trial = ai;
-                                W_st(ai).DTone.theta.RT = vRT(ai);
-                            case 2 %high gamma
-                                W_st(ai).DTone.gamma.adj = cW;
-                                W_st(ai).DTone.gamma.twin = Wtwin;
-                                W_st(ai).DTone.gamma.trial = ai;
-                                W_st(ai).DTone.gamma.RT = vRT(ai);
-                        end
+                        W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
+                        W_st(ai).DTone(freq).adj = cW;
+                        W_st(ai).DTone(freq).twin = Wtwin;
+                        W_st(ai).DTone(freq).trial = ai;
+                        W_st(ai).DTone(freq).RT = vRT(ai);
                     case 'tDTind2'
                         Wtwin = [500 1000];
-                        switch freq
-                            case 1 %theta
-                                W_st(ai).DTtwo.theta.adj = cW;
-                                W_st(ai).DTtwo.theta.twin = Wtwin;
-                                W_st(ai).DTtwo.theta.trial = ai;
-                                W_st(ai).DTtwo.theta.RT = vRT(ai);
-                            case 2 %high gamma
-                                W_st(ai).DTtwo.gamma.adj = cW;
-                                W_st(ai).DTtwo.gamma.twin = Wtwin;
-                                W_st(ai).DTtwo.gamma.trial = ai;
-                                W_st(ai).DTtwo.gamma.RT = vRT(ai);
-                        end
+                        W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
+                        W_st(ai).DTtwo(freq).adj = cW;
+                        W_st(ai).DTtwo(freq).twin = Wtwin;
+                        W_st(ai).DTtwo(freq).trial = ai;
+                        W_st(ai).DTtwo(freq).RT = vRT(ai);
                     case 'tDTind3'
                         Wtwin = [1000 1500];
-                        switch freq
-                            case 1 %theta
-                                W_st(ai).DTthree.theta.adj = cW;
-                                W_st(ai).DTthree.theta.twin = Wtwin;
-                                W_st(ai).DTthree.theta.trial = ai;
-                                W_st(ai).DTthree.theta.RT = vRT(ai);
-                            case 2 %high gamma
-                                W_st(ai).DTthree.gamma.adj = cW;
-                                W_st(ai).DTthree.gamma.twin = Wtwin;
-                                W_st(ai).DTthree.gamma.trial = ai;
-                                W_st(ai).DTthree.gamma.RT = vRT(ai);
-                        end
+                        W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
+                        W_st(ai).DTthree(freq).adj = cW;
+                        W_st(ai).DTthree(freq).twin = Wtwin;
+                        W_st(ai).DTthree(freq).trial = ai;
+                        W_st(ai).DTthree(freq).RT = vRT(ai);
                 end
             end
         end
@@ -245,10 +219,10 @@ for iji=1:length(allSubj)
     disp('Done');
     
     %% Save
-    
+    if ~exist(saveDir,'dir'),mkdir(saveDir);end
     if saveon
         disp('Saving...') %#ok<UNRCH>
-        save([subj '_Wst' num2str(bipol)], 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
+        save(fullfile(saveDir,[subj '_Wst' num2str(bipol)]), 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
         keep allSubj
     end
         

@@ -75,7 +75,7 @@ for x = 1:numTimeWindows
 end
 for trialCount = 1:numTrials
     tic;
-    fprintf([num2str(trialCount) '\n'])
+    fprintf(['trial ' num2str(trialCount) '/' num2str(numTrials) '\n'])
     tmpplv = zeros(size(filteredData,2),numChannels, numChannels);
     for channelCount = 1:numChannels-1
         channelData = squeeze(filteredData(channelCount, :, trialCount));
