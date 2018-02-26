@@ -136,7 +136,7 @@ for l=1:length(lead_prefixes)
         elecNum = lead_chs(i);
         eeg(:,:,i) = an_getlfp_ms_wrapper(elecNum,events(stim_events),trial_end-trial_start,trial_start);
         dat = look(lfp_fileroot,elecNum,[],1)';
-        [M,SD,sk,k,med,zlow,zhi,tM,tSD,~,ksh,ksp,ksstat,kscv]=signalstat_cb(dat(length(dat)/3:length(dat)/1.5),0); %use middle 3rd of data to get stats
+        [M,SD,sk,k,med,zlow,zhi,tM,tSD,~,ksh,ksp,ksstat,kscv]=signalstat_cb(dat(length(dat)/3:length(dat)/1.5),0); %use middle 
         chan_stats = [chan_stats; elecNum,M,SD,sk,k,med,zlow,zhi,tM,tSD,ksh,ksp,ksstat,kscv];
         if ksstat>0.1,bad_channels = [bad_channels,elecNum];end
     end

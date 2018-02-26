@@ -51,7 +51,7 @@ for f=1:length(files)
             erp2(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(eeg(includeTrials2,:,includeChan),1))';
         end
         goodChan = goodChan+sum(includeChan);
-        erp_elecInfo = [erp_elecInfo;lead_elecInfo];
+        erp_elecInfo = [erp_elecInfo;lead_elecInfo(includeChan,:)];
     end
 end
 %% Make Plots

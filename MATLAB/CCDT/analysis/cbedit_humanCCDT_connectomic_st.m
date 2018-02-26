@@ -25,7 +25,10 @@ filtSpec(1).order = 250;
 filtSpec(1).name = 'theta';
 filtSpec(2).range = [70 100];
 filtSpec(2).order = 50;
-filtSpec(2).name = 'gamma';
+filtSpec(2).name = 'high gamma';
+filtSpec(2).range = [35 55];
+filtSpec(2).order = 50;
+filtSpec(2).name = 'low gamma';
 
 %% CCDT Connectomics subject loop
 for iji=1:length(allSubj)
@@ -223,7 +226,6 @@ for iji=1:length(allSubj)
     if saveon
         disp('Saving...') %#ok<UNRCH>
         save(fullfile(saveDir,[subj '_Wst' num2str(bipol)]), 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
-        keep allSubj
     end
         
 end

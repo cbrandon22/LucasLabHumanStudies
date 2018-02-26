@@ -21,7 +21,7 @@ for i=1:length(files)
 end
 keyboard
 % Manually fix bad_channels and re-save sessInfo.mat if altered
-bad_channels = [37,90];
+bad_channels = [90];
 save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
 % for i=2:size(chan_stats,2)
 %     figure;
