@@ -1,5 +1,5 @@
 %% Inputs
-subj = 'HUP159_e';
+subj = 'HUP156_i';
 ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
 trialType1 = {'TARGETHF','BACKGROUNDHF'};
 trialType2 = {'TARGETLF','BACKGROUNDLF'}; % leave empty to only select trialType1
@@ -12,7 +12,7 @@ trialType2_label = 'Low Freq.';
 
 load([ddir '/sessInfo.mat']);
 includeTrials = [725 1245];
-%keyboard % manually set and run include trials based on nlxEvents
+keyboard % manually set and run include trials based on nlxEvents
 
 %%
 includeTrials1 = ismember(trial_type,trialType1);
