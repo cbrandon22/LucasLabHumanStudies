@@ -1,6 +1,9 @@
  %% Inputs 
 clear;
-subj = 'HUP147_e';
+xlfile = fullfile('C:\Users\gregb\Documents\MATLAB\induction_awake');
+[~,~,xlcells] = xlsread(xlfile);
+for s = 1:length(xlcells)
+subj = xlcells{s,1};
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
 trialType1 = {'TARGETHF','TARGETLF'};
 trialType2 = {'BACKGROUNDHF','BACKGROUNDLF'}; % leave empty to only select trialType1
@@ -12,9 +15,8 @@ trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
 zscore = 1; %z-score electrodes to pre-trial baseline
-includeTrials = [1135 1800];
-keyboard % manually set and run include trials based on nlxEvents
-
+includeTrials = strsplit(xlcells{s,2});
+includeTrials = [str2double(includeTrials{1}),str2double(includeTrials{2})];
 
 %%
 includeTrials1 = ismember(trial_type,trialType1);
@@ -102,7 +104,7 @@ xticklabels = -400:50:950;
 xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
 
-
+end
 
 % keyboard
 %sample single channel

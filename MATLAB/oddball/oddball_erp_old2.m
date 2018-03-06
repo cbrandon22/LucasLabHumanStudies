@@ -2,7 +2,7 @@ function oddball_erp
 % This function plots ERPs from the oddball task
 
 %Inputs:
-subj = 'HUP142_i';
+subj = 'HUP150_i';
 %Settings:
 zScoreRandBase = 0; % Plots z-score voltages using random baseline
 subtractBackground = 0; %Subtract background tone signal from target
