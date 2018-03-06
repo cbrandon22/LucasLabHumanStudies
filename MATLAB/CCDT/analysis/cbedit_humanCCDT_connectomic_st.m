@@ -3,9 +3,10 @@
 %% Inputs
 ddir = '/Volumes/HumanStudies/HumanStudies/CCDT'; % should contain events/ and eeg/ folders
 saveDir = '/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity';
-allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
-    'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
-    'HUP154','HUP157'};
+% allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
+%     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
+%     'HUP154','HUP157'};
+allSubj = {'HUP152','HUP153','HUP154','HUP157'};
 saveon=1;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
 lpc=200; % low-pass cut-off frequency for butterworth filter: wn=lpc/(fs/2)

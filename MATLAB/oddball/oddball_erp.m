@@ -15,7 +15,6 @@ zscore = 1; %z-score electrodes to pre-trial baseline
 includeTrials = [1135 1800];
 keyboard % manually set and run include trials based on nlxEvents
 
-
 %%
 includeTrials1 = ismember(trial_type,trialType1);
 if ~isempty(trialType2)

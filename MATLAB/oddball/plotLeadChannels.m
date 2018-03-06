@@ -1,7 +1,7 @@
 % Manually check processed neuralynx signal (uses an_processSubj files and
 % oddball_processing files)
 clear
-subj = 'HUP144_e';
+subj = 'HUP159_e';
 ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
 
 
@@ -23,7 +23,14 @@ keyboard
 % Manually fix bad_channels and re-save sessInfo.mat if altered
 bad_channels = [37,90];
 save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
-% for i=2:size(chan_stats,2)
-%     figure;
-%     hist(chan_stats(:,i),20)
-% end
+%% Set dynamical criticality parameters
+% possibly useful plots:
+figure;
+dat=look(events(1).lfpfile,5);%condensed single channel plot
+[~,maxInd] = max(dat);
+plot(dat(maxInd-20:maxInd+20)); %plot samples around max value
+% set and save parameters
+parameters.ana = [2702168]; % anesthesia drug start/stop
+parameters.coc = [8224136];
+parameters.artifact = [maxInd-10:maxInd+20]; % Artifact in electrical signal
+save(fullfile(ddir,'parameters.mat'),'parameters');
