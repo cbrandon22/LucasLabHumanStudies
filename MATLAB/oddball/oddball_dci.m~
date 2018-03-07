@@ -48,6 +48,20 @@ for subi=1:length(subject_list)
 %             data_elecInfo = [data_elecInfo;lead_elecInfo(includeChan,:)];
 %         end
 %     end
+
+    % save window
+    save_dir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci',subj,['tw' num2str(win)],'Analysis');
+    if ~exist(save_dir),mkdir(save_dir);end
+    save(fullfile(save_dir, 'grid_win.mat'), 'win')
+    
+    %% make directories
+    if ~exist(fullfile(save_dir,['order_' num2str(order)], 'images'), 'dir')
+        mkdir(fullfile(save_dir,['order_' num2str(order)], 'images'));
+    end
+    if ~exist(fullfile(save_dir,['Analysis/order_' num2str(order)], 'stats/images/discrete'), 'dir')
+        mkdir(fullfile(save_dir,['Analysis/order_' num2str(order)], 'stats/images/discrete'));
+    end
+    
     good_elecInfo = elecInfo(~ismember(cell2mat(elecInfo(:,1)),bad_channels),:);
     dat = look(events(1).lfpfile,good_elecInfo{1,1},[],1)';
     numSessSamples = length(dat);
@@ -57,18 +71,15 @@ for subi=1:length(subject_list)
     % initialize data structure
     AR_mod = struct();
     
-    cnt = 0; % for indexing purposes
     disp('Creating AR model')
     % for every 300ms time window, get coefficient matrix
-    i=1;
-    while i<=numSessSamples-win-1
     for cnt=1:floor(numSessSamples/win)
-        winSamples = cnt*win;
-        fprintf('time window %d of %d', cnt, floor(numSessSamples/win))
+        winSamples = cnt*win-(win-1):cnt*win;
+        fprintf('time window %d of %d\n', cnt, floor(numSessSamples/win))
         data = ones(size(good_elecInfo,1),win)*NaN;
         for chan = 1:size(good_elecInfo,1)
             dat = look(events(1).lfpfile,good_elecInfo{chan,1},[],1)';
-            data(chan,:) = dat(i:i+win-1); % trim to only include this window (keeps matrix at manageable size)
+            data(chan,:) = dat(winSamples); % trim to only include this window (keeps matrix at manageable size)
         end
         % detrend and subtract mean from data
         n_data = detrend(data');
@@ -82,7 +93,7 @@ for subi=1:length(subject_list)
         [w,A,C,SBC,FPE,th] = arfit(n_data,pmin,pmax,'sbc'); % data_n should be a time chunk;
         
         % get optimal order
-        popt = size(A,2)/numel(elecs);
+        popt = size(A,2)/size(good_elecInfo,1);
         
         % test residuals of model
         % arres: tests significance of residuals
@@ -146,4 +157,169 @@ for subi=1:length(subject_list)
         %     AR_mod(cnt).evect = S;
         %     AR_mod(cnt).dampr = 1./tau;
     end
+    hw=win/2;
+    if ~isempty(parameters.artifact)
+        keyboard
+        idx1 = (((1:size(AR_mod,2)).*win) >= parameters.artifact(1));
+        idx2 = (((1:size(AR_mod,2)).*win - (win-1)) <= parameters.artifact(end));
+        art_idx = idx1 & idx2;
+        
+        % for plotting
+        %time_s = ([1:size(AR_mod,2)].*win - hw)./srate;
+        time_s = (((1:size(AR_mod,2)).*win - (win-1))./srate;
+        time_s = time_s(~art_idx);
+        
+        % cut out artifact
+        AR_mod = AR_mod(~art_idx);
+    else
+        % for plotting
+        %time_s = ((1:size(AR_mod,2)).*win - hw)./srate;
+    end
+    % get change of consciousness in seconds
+    coc = time_s(coc);
+    
+    save([save_dir, '/order_', num2str(popt), '/AR_mod'], 'AR_mod', '-v7.3');
+    save([save_dir, '/order_', num2str(popt), '/time_s'], 'time_s', '-v7.3');
+    
+    %% Plot median over time
+    
+    med = zeros(1,numel(AR_mod));
+    for i = 1:numel(med)
+        med(i) = median(AR_mod(i).ev);
+    end
+    
+    clf
+    plot(time_s, med)
+    hold on
+    plot([coc, coc], [min(med), max(med)], 'r', 'linewidth', 3)
+    %plot([ana_start, ana_start], [min(med), max(med)], 'k')
+    xlim([time_s(1), time_s(end)])
+    ylim([min(med), max(med)])
+    xlabel('Time (windows)', 'fontsize', 15)
+    ylabel('Median', 'fontsize', 15);
+    title('Eigenmode Median', 'fontsize', 20)
+    
+    save([save_dir, '/order_', num2str(popt), '/medians'], 'med', '-v7.3');
+    saveas(gca, [save_dir, '/order_', num2str(popt), '/images/medians.jpg'], 'jpg');
+    
+    %% Plot EM distribution
+    
+    % not sure what the best way to visualize this is, going to start with 2d
+    % histogram
+    
+    % number of AR models calculated
+    n_tstamps = size(AR_mod,2);
+    
+    % get initial edges for histogram, so that they are all the same
+    ev = AR_mod(1).ev;
+    % automatically bins data, and gets count for data points in each bin, with
+    % specified number of bin
+    [N, edges] = histcounts(ev,1000);
+    
+    % number of bins by number of timestamps
+    binned_em = zeros(numel(edges)-1,n_tstamps);
+    % just matrix of eigen modes
+    eig_modes = zeros(numel(ev), n_tstamps);
+    
+    for i = 1:n_tstamps-1
+        % add to eig_modes
+        ev = AR_mod(i).ev;
+        eig_modes(1:numel(ev),i) = ev;
+        % add to binned em
+        tmp = histcounts(ev, edges);
+        binned_em(:,i) = tmp;
+    end
+    
+    % since we're only interested in values around 1, only plot .8 and up
+    idx = (edges >= .85);
+    edges = edges(idx);
+    plot_eig_modes = binned_em(idx(1:end-1),:);
+    
+    % plot
+    figure(1)
+    clf
+    hold on
+    imagesc(time_s, edges, plot_eig_modes)
+    colormap('hot')
+    %caxis([0,5])
+    colorbar
+    ylim([min(edges),max(edges)])
+    xlim([time_s(1), time_s(end)])
+    
+    % plot behavioral COC nd anesthesia
+    plot([coc, coc], [1,numel(edges)], 'w', 'linewidth', 3)
+    %plot([ana_start, ana_start], [1,numel(edges)], 'w')
+    
+    % edges as a string
+    xlabel('Time Windows (s)', 'fontsize', 15)
+    ylabel('Criticality Index','fontsize', 15)
+    title('Histogram of Criticality Over Time','fontsize', 20)
+    hold off
+    
+    save([save_dir, '/order_', num2str(popt), '/eig_modes'], 'eig_modes', '-v7.3');
+    saveas(gca, [save_dir, '/order_', num2str(popt), '/images/ci.jpg'], 'jpg');
+    
+    %% Plot Reference Distribution against Individual Time Points
+    
+    % get conscious vs unconscious distribution
+    if strcmp(cond,'i')
+        %vectorize
+        ref_em1 = reshape(eig_modes(:,1:ref_num), [], 1);
+        [n1, x1] = hist(ref_em1,100);
+        ref_em2 = reshape(eig_modes(:,end-ref_num:end-1), [], 1);
+        [n2, x2] = hist(ref_em2,100);
+        
+    else
+        ref_em1 = reshape(eig_modes(:,end-ref_num:end-1), [], 1);
+        [n1, x1] = hist(ref_em1,100);
+        ref_em2 = reshape(eig_modes(:,1:ref_num), [], 1);
+        [n2, x2] = hist(ref_em2,100);
+    end
+    % normalize
+    n1 = n1/max(n1);
+    n2 = n2/max(n2);
+    % back to plotting
+    clf
+    bar(x1, n1,'FaceColor','b','EdgeColor','none', 'FaceAlpha', .5);
+    hold on
+    bar(x2,n2, 'Facecolor', 'r', 'EdgeColor','none', 'FaceAlpha', .5);
+    title('Eigenmode Distribution', 'fontsize', 20)
+    xlabel('Eigenvalue', 'fontsize', 15)
+    ylabel('Number of Modes', 'fontsize', 15)
+    legend([{'Conscious'}, {'Unconscious'}], 'fontsize', 10)
+    hold off
+    saveas(gca, [save_dir, '/order_', num2str(popt), '/stats/images/discrete/group_hist.jpg'], 'jpg');
+    
+    
+    % % get individual time points
+    % for i = 1:(size(AR_mod,2)-ref_num);
+    %     figure
+    %     % change if the reference is taken from the beginning or the end, depending
+    %     % on if this is inductance or emergence
+    %     if strcmp(cond,'i')
+    %         %vectorize
+    %         ref_em = reshape(eig_modes(:,1:ref_num), [], 1);
+    %         [n1, x1] = hist(ref_em,100);
+    %         [n2, x2] = hist(eig_modes(:,i),100);
+    %     else
+    %         ref_em = reshape(eig_modes(:,end-ref_num:end-1), [], 1);
+    %         [n1, x1] = hist(ref_em,100);
+    %         [n2, x2] = hist(eig_modes(:,end-i),100);
+    %     end
+    %     % normalize
+    %     n1 = n1/max(n1);
+    %     n2 = n2/max(n2);
+    %     % back to plotting
+    %     bar(x1, n1,'FaceColor','b','EdgeColor','none', 'FaceAlpha', .5);
+    %     hold on
+    %     bar(x2,n2, 'Facecolor', 'r', 'EdgeColor','none', 'FaceAlpha', .5);
+    %     title(['Eigenmode Distribution ', num2str(i)])
+    %     xlabel('Eigenvalue')
+    %     ylabel('Number of Modes')
+    %     legend([{'Conscious'}, {'Unconscious'}])
+    %     hold off
+    %     saveas(gca, [save_dir, '/order_', num2str(popt), '/stats/images/discrete/', num2str(i)], 'jpg');
+    %     close
+    % end
+    close all
 end

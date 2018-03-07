@@ -36,5 +36,5 @@ plot(dat(minInd-50:minInd+50));
 % set and save parameters
 parameters.ana = [5731201]; % anesthesia drug start/stop
 parameters.coc = [15326453];
-parameters.artifact = []; % Artifact in electrical signal
+parameters.artifact = [maxInd-10:maxInd+20]; % Artifact in electrical signal
 save(fullfile(ddir,'parameters.mat'),'parameters');
