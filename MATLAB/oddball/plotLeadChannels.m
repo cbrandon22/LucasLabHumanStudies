@@ -1,7 +1,7 @@
 % Manually check processed neuralynx signal (uses an_processSubj files and
 % oddball_processing files)
 clear
-subj = 'HUP156_i';
+subj = 'HUP155_i';
 ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
 
 
@@ -34,7 +34,7 @@ plot(dat(maxInd-50000:maxInd+50000)); %plot samples around max value
 figure
 plot(dat(minInd-50:minInd+50));
 % set and save parameters
-parameters.ana = [5731201]; % anesthesia drug start/stop
-parameters.coc = [15326453];
+parameters.ana = []; % anesthesia drug start/stop
+parameters.coc = [];
 parameters.artifact = []; % Artifact in electrical signal
 save(fullfile(ddir,'parameters.mat'),'parameters');

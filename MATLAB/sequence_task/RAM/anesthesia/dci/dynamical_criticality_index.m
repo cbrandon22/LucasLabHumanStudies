@@ -14,7 +14,7 @@ addpath(genpath('/Users/tnl/Desktop/MATLAB/arfit/'))
 
 %% Load and define global variables
 
-subjects = [{'HUP125_i'}];%[{'HUP133_e'}, {'HUP119_i'}, {'HUP121_i'}, {'HUP117_i'}, {'HUP132_i'}, {'HUP138_i'}, {'HUP121_e'}
+subjects = [{'HUP119_i'}];%[{'HUP133_e'}, {'HUP119_i'}, {'HUP121_i'}, {'HUP117_i'}, {'HUP132_i'}, {'HUP138_i'}, {'HUP121_e'}
 % loop through subjects
 for s = 1:numel(subjects)
     % define global variables
