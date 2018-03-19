@@ -10,5 +10,5 @@ downsampleStruct.evFile            = 'Events.nev';
 downsampleStruct.fileExt           = 'ncs';
 downsampleStruct.minBytesInFile    = 20000;
 downsampleStruct.engineersNyquist  = 2/5;
-downsampleStruct.lowPassType       = 'BUTTER';
+downsampleStruct.lowPassType       = 'NONE'; %'BUTTER';
 downsampleStruct.lowPassOrder      = 4;

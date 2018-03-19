@@ -54,6 +54,8 @@ for subi=1:length(subject_list)
                 data_elecInfo = [data_elecInfo;lead_elecInfo(includeChan,:)];
             end
         end
+        sessBlocks = 1;%number of session blocks
+        nBlockWin=ceil(numSessSamples/sessBlocks/win);%number of windows per session block (overshoots)
     else
         sessBlocks = ceil(numSessSamples/(maxSamplesToLoad-win));%number of session blocks
         nBlockWin=ceil(numSessSamples/sessBlocks/win);%number of windows per session block (overshoots)
@@ -101,7 +103,9 @@ for subi=1:length(subject_list)
             n_data = detrend(data(:,winSamples)');
             n_data = n_data - mean(mean(n_data))';
             
-            
+            if(sum(sum(isinf(n_data)))>0)
+                keyboard
+            end
             % sbc stands for schwartz criterion
             % w = intercepts (should be 0), A is coefficient matrix, C is noise
             % covariance, th is needed for confidence interval calculation

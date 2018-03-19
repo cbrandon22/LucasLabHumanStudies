@@ -122,40 +122,53 @@ for k=1:length(elecNames)
   LOWPASSFREQ = floor(downsampleStruct.engineersNyquist*DOWNSAMPLE_RATE);
   
   % convert data to doubles before filtering....
-  fprintf('Converting data to doubles for filtering....')
-  data = double(data);
-  fprintf('done\n')
+  if ~strcmp(downsampleStruct.lowPassType,'NONE')
+    fprintf('Converting data to doubles for filtering....')
+    data = double(data);
+    fprintf('done\n')
+  else
+      DATA_TYPE             = 'int16';
+  end
   
   % filter the data
-  fprintf('Filtering above %d Hz....',LOWPASSFREQ)
   switch upper(downsampleStruct.lowPassType)
    case 'BUTTER'   
-    
+    fprintf('Filtering above %d Hz....',LOWPASSFREQ)
     T_min   = 20; % minutes of ECoG to run th filter
     T_sec   = T_min*60;
     data_LP = buttfilt(data,LOWPASSFREQ,info.actualSampleRate,'low',downsampleStruct.lowPassOrder);
     
-    
+   case 'NONE'
+    fprintf('Skipping low pass filter\n')
+    data_LP = data;
    otherwise
     error('filter type not supported')
   end
   fprintf('done\n')
 
   % Perform the decimation
-  fprintf('Decimating every %d samples.\n',decimateFactor)  
+  if ~strcmp(downsampleStruct.targetSampleRate,'native')
+      fprintf('Decimating every %d samples.\n',decimateFactor)
+  else
+      fprintf('Keeping native sampling rate: %0.1f Hz\n',DOWNSAMPLE_RATE);
+  end
+  
   indToKeep                        = false(1,length(data_LP));
   indToKeep(1:decimateFactor:end)  = true;
   downSampledData                  = data_LP(indToKeep);
-  downSampledTS                    = TSsamples(indToKeep); 
+  downSampledTS                    = TSsamples(indToKeep);
   FIRSTSAMPLETIME = downSampledTS(1);
   LASTSAMPLETIME  = downSampledTS(end);
   NUMDOWNSAMPLES  = length(downSampledData);
-  fprintf('New downsampling rate is %0.1f Hz\n',DOWNSAMPLE_RATE);
-    
-  % convert the downsampled data to int16's (the original data format)  
-  fprintf('Converting filtered data back to int16....')
-  DATA_TYPE             = 'int16';
-  downSampledData_int16 = int16(downSampledData);
+  if ~strcmp(downsampleStruct.targetSampleRate,'native')
+    fprintf('New downsampling rate is %0.1f Hz\n',DOWNSAMPLE_RATE);
+  
+
+    % convert the downsampled data to int16's (the original data format)
+    fprintf('Converting filtered data back to int16....')
+    DATA_TYPE             = 'int16';
+    downSampledData_int16 = int16(downSampledData);
+  end
   fprintf('done\n')  
     
   % write the jacksheet line

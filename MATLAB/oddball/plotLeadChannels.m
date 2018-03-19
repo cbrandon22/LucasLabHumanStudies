@@ -24,17 +24,23 @@ keyboard
 bad_channels = [37,90];
 save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
 %% Set dynamical criticality parameters
-% possibly useful plots:
+% possibly useful plots to find any obvious artifact
+% If possible artifact is noticable in full session plot, try plotting
+% windows around max/min or around certain nlxEvents (e.g. nlxEvents.type = 'patient pulling
+% at electrodes...')
 figure;
-dat=look(events(1).lfpfile,5);%condensed single channel plot
+exampleChan = 21;
+dat=look(events(1).lfpfile,exampleChan);%condensed single channel plot
+
 [~,maxInd] = max(dat);
 [~,minInd] = min(dat);
 figure
-plot(dat(maxInd-50000:maxInd+50000)); %plot samples around max value
+plot(dat(maxInd-5000:maxInd+5000)); %plot samples around max value
 figure
-plot(dat(minInd-50:minInd+50));
-% set and save parameters
-parameters.ana = []; % anesthesia drug start/stop
-parameters.coc = [];
+plot(dat(minInd-50:minInd+50)); %plot samples around min value
+
+% set and save parameters (get ana/coc from nlxEvents)
+parameters.ana = [4433114]; % anesthesia drug start/stop
+parameters.coc = [19662712]; % change of consciousness (unresponsive<->responsive or intubation/extubation)
 parameters.artifact = []; % Artifact in electrical signal
 save(fullfile(ddir,'parameters.mat'),'parameters');
