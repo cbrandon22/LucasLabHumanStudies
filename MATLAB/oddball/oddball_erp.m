@@ -1,7 +1,8 @@
  %% Inputs 
 clear;
-subj = 'HUP147_e';
-ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
+subj = 'HUP156_i';
+%ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
+ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
 trialType1 = {'TARGETHF','TARGETLF'};
 trialType2 = {'BACKGROUNDHF','BACKGROUNDLF'}; % leave empty to only select trialType1
 subtract_trialTypes = 1; %set to 1 to plot difference btw types
@@ -12,7 +13,7 @@ trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
 zscore = 1; %z-score electrodes to pre-trial baseline
-includeTrials = [1135 1800];
+includeTrials = [1 600];
 keyboard % manually set and run include trials based on nlxEvents
 
 %%

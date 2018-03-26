@@ -95,7 +95,7 @@ for k=1:length(elecNames)
   if ~exist(thisChannelFile,'file');
     error('This makes no sense and should never happen')
   end  
-  fprintf('CHANNEL %d: %s\n',k,elecNames{k})
+  fprintf('CHANNEL %d: %s\n',cscNum,elecNames{k})
   fprintf('---------------------\n')
   [data,info,TSblock,TSsamples]=load_ncs2(thisChannelFile);
   ADCHANNEL  = info.ADChannel;
@@ -108,6 +108,7 @@ for k=1:length(elecNames)
   % sampling rate without going under)
   if strcmp(downsampleStruct.targetSampleRate,'native')
       downsampleStruct.targetSampleRate = floor(info.actualSampleRate);
+      skipDownsample = 1;
   end
   timeInSecBetweenActualSamples = (info.sampleTSDiff./1e6);  
   decimateFactor = floor(1./(downsampleStruct.targetSampleRate*timeInSecBetweenActualSamples));
@@ -147,7 +148,7 @@ for k=1:length(elecNames)
   fprintf('done\n')
 
   % Perform the decimation
-  if ~strcmp(downsampleStruct.targetSampleRate,'native')
+  if ~skipDownsample
       fprintf('Decimating every %d samples.\n',decimateFactor)
   else
       fprintf('Keeping native sampling rate: %0.1f Hz\n',DOWNSAMPLE_RATE);
@@ -160,14 +161,15 @@ for k=1:length(elecNames)
   FIRSTSAMPLETIME = downSampledTS(1);
   LASTSAMPLETIME  = downSampledTS(end);
   NUMDOWNSAMPLES  = length(downSampledData);
-  if ~strcmp(downsampleStruct.targetSampleRate,'native')
+  if ~skipDownsample
     fprintf('New downsampling rate is %0.1f Hz\n',DOWNSAMPLE_RATE);
-  
 
     % convert the downsampled data to int16's (the original data format)
     fprintf('Converting filtered data back to int16....')
     DATA_TYPE             = 'int16';
     downSampledData_int16 = int16(downSampledData);
+  else
+      downSampledData_int16 = downSampledData;
   end
   fprintf('done\n')  
     

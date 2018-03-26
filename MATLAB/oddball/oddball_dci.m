@@ -15,6 +15,8 @@ clear
 subject_list = {'HUP155_i'};
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball/eeg'; %path to folder containing subjects
 maxSamplesToLoad = 10000000; % break session into blocks of maxSamplesToLoad for speed
+reref_method = 'lead_average'; %'lead_average'
+win_ms = 750;
 for subi=1:length(subject_list)
     subj = subject_list{subi};
     cond = subj(end); % inductance or emergence
@@ -22,7 +24,7 @@ for subi=1:length(subject_list)
     load(fullfile(ddir,subj,'processed/sessInfo.mat'));
     load(fullfile(ddir,subj,'processed/parameters.mat'));
     
-    win = round(500*(srate/1000));
+    win = round(win_ms*(srate/1000));
     ref_num = floor(5*srate/win); % number of time bins to use as a conscious reference distribution: should equal 5 seconds
     coc = floor(parameters.coc/win);
     ana_start = round(parameters.ana/win);
@@ -31,28 +33,16 @@ for subi=1:length(subject_list)
     %for high sample rates.) Probably will move this into AR loop to only
     %make matrix of size electrodes x window samples
     good_elecInfo = elecInfo(~ismember(cell2mat(elecInfo(:,1)),bad_channels),:);
+    if (win-order)<(size(good_elecInfo,1)*order)
+        error('window too small')
+    end
     dat = look(events(1).lfpfile,good_elecInfo{1,1},[],1)';
     numSessSamples = length(dat);
     if numSessSamples<maxSamplesToLoad % load full session now
-        sessBlocks = 1;
-        files = dir(fullfile(ddir,subj,'processed'));
-        goodChan = 0;
-        data_elecInfo = {};
-        data = [];
-        for i=1:length(files)
-            if ~ismember(files(i).name,{'.','..','.DS_Store','sessInfo.mat'})
-                load(fullfile(ddir,subj,'processed',files(i).name),'lead_elecInfo');
-                includeChan = ~ismember(cell2mat(lead_elecInfo(:,1)),bad_channels);
-                leadChannels = cell2mat(lead_elecInfo(:,1));
-                leadChannels = leadChannels(includeChan);
-                leadEEG = [];
-                for j=1:length(leadChannels)
-                    leadEEG(j,:) = look(events(1).lfpfile,leadChannels(j),[],1)';
-                end
-                data = [data;leadEEG];
-                goodChan = goodChan+sum(includeChan);
-                data_elecInfo = [data_elecInfo;lead_elecInfo(includeChan,:)];
-            end
+        data = ones(size(good_elecInfo,1),numSessSamples)*NaN;
+        for chan = 1:size(good_elecInfo,1)
+            dat = look(events(1).lfpfile,good_elecInfo{chan,1},[],1)';
+            data(chan,:) = dat;
         end
         sessBlocks = 1;%number of session blocks
         nBlockWin=ceil(numSessSamples/sessBlocks/win);%number of windows per session block (overshoots)
@@ -60,19 +50,14 @@ for subi=1:length(subject_list)
         sessBlocks = ceil(numSessSamples/(maxSamplesToLoad-win));%number of session blocks
         nBlockWin=ceil(numSessSamples/sessBlocks/win);%number of windows per session block (overshoots)
     end
-
+    leads = regexp({good_elecInfo{:,3}},'\D*','match');
+    leads = vertcat(leads{:});
+    [lead_prefix,~,lead_ind] = unique(leads);
+    
     % save window
-    save_dir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci',subj,['tw' num2str(win)],'Analysis');
+    save_dir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci',subj,reref_method,['tw' num2str(win)],'Analysis');
     if ~exist(save_dir),mkdir(save_dir);end
     save(fullfile(save_dir, 'grid_win.mat'), 'win')
-    
-    %% make directories
-    if ~exist(fullfile(save_dir,['order_' num2str(order)], 'images'), 'dir')
-        mkdir(fullfile(save_dir,['order_' num2str(order)], 'images'));
-    end
-    if ~exist(fullfile(save_dir,['order_' num2str(order)], 'stats/images/discrete'), 'dir')
-        mkdir(fullfile(save_dir,['order_' num2str(order)], 'stats/images/discrete'));
-    end
     
     pmax = order; 
     pmin = 1;
@@ -96,16 +81,23 @@ for subi=1:length(subject_list)
             bStartInd = 1;
             bEndInd = numSessSamples;
         end
+        switch(reref_method)
+            case 'common_average'
+                disp('Re-referencing to common average');
+                data = bsxfun(@minus,data, mean(data,1));
+            case 'lead_average'
+                disp('Re-referencing to lead averages');
+                for l=1:max(lead_ind)
+                    data(lead_ind==l,:) = bsxfun(@minus,data(lead_ind==l,:), mean(data(lead_ind==l,:),1));
+                end
+        end
         disp('Creating AR model')
         for cnt=1:floor(size(data,2)/win)
             winSamples = cnt*win-(win-1):cnt*win;
-            % detrend and subtract mean from data
+            % detrend data (avoids interpretation of lf oscillations as exponential growth/decay)
             n_data = detrend(data(:,winSamples)');
-            n_data = n_data - mean(mean(n_data))';
-            
-            if(sum(sum(isinf(n_data)))>0)
-                keyboard
-            end
+            %n_data = n_data - mean(mean(n_data))';
+             
             % sbc stands for schwartz criterion
             % w = intercepts (should be 0), A is coefficient matrix, C is noise
             % covariance, th is needed for confidence interval calculation
@@ -113,7 +105,7 @@ for subi=1:length(subject_list)
             [w,A,C,SBC,FPE,th] = arfit(n_data,pmin,pmax,'sbc'); % data_n should be a time chunk;
             
             % get optimal order
-            popt = size(A,2)/size(good_elecInfo,1);
+            popt = size(A,2)/size(good_elecInfo,1); % size(A,2) = optimal order * number of channels
             
             % test residuals of model
             % arres: tests significance of residuals
@@ -187,7 +179,7 @@ for subi=1:length(subject_list)
         
         % for plotting
         %time_s = ([1:size(AR_mod,2)].*win - hw)./srate;
-        time_s = ((1:size(AR_mod,2)).*win - (win-1))./srate;
+        time_s = ((1:size(AR_mod,2)).*win - (win/2))./srate;
         time_s = time_s(~art_idx);
         
         % cut out artifact
@@ -195,11 +187,18 @@ for subi=1:length(subject_list)
     else
         % for plotting
         %time_s = ((1:size(AR_mod,2)).*win - hw)./srate;
-        time_s = ((1:size(AR_mod,2)).*win - (win-1))./srate;
+        time_s = ((1:size(AR_mod,2)).*win - (win/2))./srate;
     end
     % get change of consciousness in seconds
     coc = time_s(coc);
     
+    % make directories
+    if ~exist(fullfile(save_dir,['order_' num2str(popt)], 'images'), 'dir')
+        mkdir(fullfile(save_dir,['order_' num2str(popt)], 'images'));
+    end
+    if ~exist(fullfile(save_dir,['order_' num2str(popt)], 'stats/images/discrete'), 'dir')
+        mkdir(fullfile(save_dir,['order_' num2str(popt)], 'stats/images/discrete'));
+    end
     save([save_dir, '/order_', num2str(popt), '/AR_mod'], 'AR_mod', '-v7.3');
     save([save_dir, '/order_', num2str(popt), '/time_s'], 'time_s', '-v7.3');
     
