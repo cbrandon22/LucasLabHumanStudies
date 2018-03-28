@@ -1,10 +1,11 @@
  %% Inputs 
 clear;
-subj = 'HUP149_e';
+subj = 'HUP150_i';
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
-trialType1 = {'TARGETHF','TARGETLF'};
-trialType2 = {'BACKGROUNDHF','BACKGROUNDLF'}; % leave empty to only select trialType1
-subtract_trialTypes = 1; %set to 1 to plot difference btw types
+trialType1 = {'TARGETHF','BACKGROUNDHF'};
+% trialType1 = {'BACKGROUNDHF','BACKGROUNDLF'};
+trialType2 = {}; % leave empty to only select trialType1
+subtract_trialTypes = 0; %set to 1 to plot difference btw types
 leadAvg_reref = 1; %re-reference to lead average
 % Plot title/legend labels
 plot_title = [];
@@ -12,8 +13,10 @@ trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
 zscore = 1; %z-score electrodes to pre-trial baseline
-includeTrials = [1 1020];
-keyboard % manually set and run include trials based on nlxEvents
+includeTrials = [150 950];
+rngfrq=[80 200];
+type='bandpass';
+% keyboard % manually set and run include trials based on nlxEvents
 
 %%
 includeTrials1 = ismember(trial_type,trialType1);
@@ -43,16 +46,38 @@ for f=1:length(files)
     if ~ismember(files(f).name,{'.','..','sessInfo.mat'})
         load(fullfile(ddir,files(f).name));
         includeChan = ~ismember(cell2mat(lead_elecInfo(:,1)),bad_channels);
-        if leadAvg_reref
-            lead_avg = nanmean(eeg(:,:,includeChan),3);
-            eeg=bsxfun(@minus,eeg,lead_avg);
-        end
-        erp1(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(eeg(includeTrials1,:,includeChan),1))';
-        if ~isempty(trialType2)
-            erp2(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(eeg(includeTrials2,:,includeChan),1))';
-        end
-        goodChan = goodChan+sum(includeChan);
-        erp_elecInfo = [erp_elecInfo;lead_elecInfo(includeChan,:)];
+     
+         if leadAvg_reref
+             lead_avg = nanmean(eeg(:,:,includeChan),3);
+             eeg=bsxfun(@minus,eeg,lead_avg);
+         end
+         for c=1:size(eeg,3)
+             for l=1:size(eeg,1)
+                 if sum(isnan(eeg(l,:,c)))>5
+                     continue
+                 end
+                 eeg(l,:,c)=buttfilt(squeeze(eeg(l,:,c)),rngfrq,srate,type,2);
+             end
+         end
+         for c=1:size(eeg,3)
+             for l=1:size(eeg,1)
+                 if sum(isnan(eeg(l,:,c)))>5
+                     continue
+                 end
+                 hb(l,:,c)=abs(hilbert(eeg(l,:,c))).^2;
+%                  if zscore
+%                      hbmean = mean(hb(:,t<0),2);
+%                      hbnstd = std(hb(:,t<0),0,2);
+%                      hb = (hb-hbmean)./hbnstd;
+%                  end
+             end
+         end
+         erp1(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(hb(includeTrials1,:,includeChan),1))';
+         if ~isempty(trialType2)
+             erp2(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(hb(includeTrials2,:,includeChan),1))';
+         end
+         goodChan = goodChan+sum(includeChan);
+         erp_elecInfo = [erp_elecInfo;lead_elecInfo(includeChan,:)];
     end
 end
 if subtract_trialTypes
@@ -102,16 +127,3 @@ xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
 
 
-
-% keyboard
-%sample single channel
-% figure
-% plot(t,erp1(10,:))
-% hold on
-% plot(t,erp2(10,:))
-% title(plot_title)
-% legend(trialType1_label,trialType2_label)
-
-%manually edit bad channels and resave file
-%bad_channels = [];
-%save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
