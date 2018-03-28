@@ -6,7 +6,8 @@ saveDir = '/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity';
 % allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
 %     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
 %     'HUP154','HUP157'};
-allSubj = {'HUP152','HUP153','HUP154','HUP157'};
+allSubj = {'HUP152'};
+splitTrials = 2; % split files by trial # (total trials/splitTrials = # of trials per W_st file). Only use when #channels>130
 saveon=1;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
 lpc=200; % low-pass cut-off frequency for butterworth filter: wn=lpc/(fs/2)
@@ -27,9 +28,9 @@ filtSpec(1).name = 'theta';
 filtSpec(2).range = [70 100];
 filtSpec(2).order = 50;
 filtSpec(2).name = 'high gamma';
-filtSpec(2).range = [35 55];
-filtSpec(2).order = 50;
-filtSpec(2).name = 'low gamma';
+filtSpec(3).range = [35 55];
+filtSpec(3).order = 50;
+filtSpec(3).name = 'low gamma';
 
 %% CCDT Connectomics subject loop
 for iji=1:length(allSubj)
@@ -167,66 +168,91 @@ for iji=1:length(allSubj)
     
     
     %% Create adj_matrix using stPLV
-    W_st = struct;
-    eTs = {'tBind' 'tDTind1' 'tDTind2' 'tDTind3'};
-    for freq = 1:length(filtSpec)     % bandpass
-        disp([filtSpec(freq).name ' frequency'])
-        fSpec.range = filtSpec(freq).range;
-        fSpec.order = filtSpec(freq).order;
-        cstplv = stPLV(cDat,512,fSpec,twin);
-        for xi = 1:length(eTs)
-            eTi = eval(eTs{xi});
-            disp(eTs{xi})
-            for ai=1:size(cDat,3)
-                cW=threshold_proportional(squeeze(mean(cstplv(ai).plv(eTi,:,:), 'omitnan')),1);
-                A = cW;
-                [n,~] = size(A);
-                B = A'+A;
-                B(1:n+1:end)=diag(A);
-                cW = B;
-                
-                switch eTs{xi}
-                    case 'tBind'
-                        Wtwin = [-500 0];
-                        W_st(ai).precue(freq).fRng = filtSpec(freq).range;
-                        W_st(ai).precue(freq).adj = cW;
-                        W_st(ai).precue(freq).twin = Wtwin;
-                        W_st(ai).precue(freq).trial = ai;
-                        W_st(ai).precue(freq).RT = vRT(ai);
-                    case 'tDTind1'
-                        Wtwin = [0 500];
-                        W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
-                        W_st(ai).DTone(freq).adj = cW;
-                        W_st(ai).DTone(freq).twin = Wtwin;
-                        W_st(ai).DTone(freq).trial = ai;
-                        W_st(ai).DTone(freq).RT = vRT(ai);
-                    case 'tDTind2'
-                        Wtwin = [500 1000];
-                        W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
-                        W_st(ai).DTtwo(freq).adj = cW;
-                        W_st(ai).DTtwo(freq).twin = Wtwin;
-                        W_st(ai).DTtwo(freq).trial = ai;
-                        W_st(ai).DTtwo(freq).RT = vRT(ai);
-                    case 'tDTind3'
-                        Wtwin = [1000 1500];
-                        W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
-                        W_st(ai).DTthree(freq).adj = cW;
-                        W_st(ai).DTthree(freq).twin = Wtwin;
-                        W_st(ai).DTthree(freq).trial = ai;
-                        W_st(ai).DTthree(freq).RT = vRT(ai);
-                end
+    if size(cDat,1)>130 % split W_st into 4 smaller files by trial number
+        nSubsetTrials = round(size(cDat,3)/splitTrials);
+        fprintf('splitting data into ~%d trial groups\n',nSubsetTrials);
+        totalTrials = size(cDat,3);
+        cDat_split={};
+        for tSubset=1:splitTrials
+            if tSubset<splitTrials
+                cDat_split(:,:,tSubset) = {cDat(:,:,(tSubset-1)*nSubsetTrials+1:nSubsetTrials*tSubset)};
+            else
+                cDat_split(:,:,tSubset) = {cDat(:,:,(tSubset-1)*nSubsetTrials+1:end)};
             end
         end
-        clear cstplv
+    else
+        cDat_split(:,:,1) = {cDat};
     end
-    
-    disp('Done');
-    
-    %% Save
-    if ~exist(saveDir,'dir'),mkdir(saveDir);end
-    if saveon
-        disp('Saving...') %#ok<UNRCH>
-        save(fullfile(saveDir,[subj '_Wst' num2str(bipol)]), 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
-    end
+    for tSubset = 1:length(cDat_split)
+        if tSubset<length(cDat_split)
+            fprintf('calculating adjacency matrix for trials %d - %d of %d\n',(tSubset-1)*nSubsetTrials+1,nSubsetTrials*tSubset,totalTrials);
+        else
+            fprintf('calculating adjacency matrix for trials %d - %d of %d\n',(tSubset-1)*nSubsetTrials+1,totalTrials,totalTrials);
+        end
+        cDat = cDat_split{tSubset};
+        W_st = struct;
+        eTs = {'tBind' 'tDTind1' 'tDTind2' 'tDTind3'};
+        for freq = 1:length(filtSpec)     % bandpass
+            disp([filtSpec(freq).name ' frequency'])
+            fSpec.range = filtSpec(freq).range;
+            fSpec.order = filtSpec(freq).order;
+            cstplv = stPLV(cDat,512,fSpec,twin);
+            for xi = 1:length(eTs)
+                eTi = eval(eTs{xi});
+                disp(eTs{xi})
+                for ai=1:size(cDat,3)
+                    cW=threshold_proportional(squeeze(mean(cstplv(ai).plv(eTi,:,:), 'omitnan')),1);
+                    A = cW;
+                    [n,~] = size(A);
+                    B = A'+A;
+                    B(1:n+1:end)=diag(A);
+                    cW = B;
+                    
+                    switch eTs{xi}
+                        case 'tBind'
+                            Wtwin = [-500 0];
+                            W_st(ai).precue(freq).fRng = filtSpec(freq).range;
+                            W_st(ai).precue(freq).adj = cW;
+                            W_st(ai).precue(freq).twin = Wtwin;
+                            W_st(ai).precue(freq).trial = ai;
+                            W_st(ai).precue(freq).RT = vRT(ai);
+                        case 'tDTind1'
+                            Wtwin = [0 500];
+                            W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
+                            W_st(ai).DTone(freq).adj = cW;
+                            W_st(ai).DTone(freq).twin = Wtwin;
+                            W_st(ai).DTone(freq).trial = ai;
+                            W_st(ai).DTone(freq).RT = vRT(ai);
+                        case 'tDTind2'
+                            Wtwin = [500 1000];
+                            W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
+                            W_st(ai).DTtwo(freq).adj = cW;
+                            W_st(ai).DTtwo(freq).twin = Wtwin;
+                            W_st(ai).DTtwo(freq).trial = ai;
+                            W_st(ai).DTtwo(freq).RT = vRT(ai);
+                        case 'tDTind3'
+                            Wtwin = [1000 1500];
+                            W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
+                            W_st(ai).DTthree(freq).adj = cW;
+                            W_st(ai).DTthree(freq).twin = Wtwin;
+                            W_st(ai).DTthree(freq).trial = ai;
+                            W_st(ai).DTthree(freq).RT = vRT(ai);
+                    end
+                end
+            end
+            clear cstplv
+        end
         
+        %% Save
+        if ~exist(saveDir,'dir'),mkdir(saveDir);end
+        if saveon
+            disp('Saving...') %#ok<UNRCH>
+            if length(cDat_split)>1
+                save(fullfile(saveDir,[subj '_Wst' num2str(bipol) '_' num2str(tSubset)]), 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
+            else
+                save(fullfile(saveDir,[subj '_Wst' num2str(bipol)]), 'W_st', 't*', 'cDat', 'ch*', 'JAC', 'vRT', 'vDT', 'i*');
+            end
+        end
+    end
+    disp('Done');
 end

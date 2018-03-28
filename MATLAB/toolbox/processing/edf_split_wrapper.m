@@ -3,8 +3,8 @@
 % (1) automatically make good_leads
 % (2) re-write jacksheet so it matches up with vox tool
 % USER INPUTS
-subj       = 'HUP157';
-task       = 'CCDT';
+subj       = 'HUP128';
+task       = 'corticalStim';
 rawDirName = '';
 badTags    = {'EKG','ekg','ECG','DC'}; % exclude from re-ref, Don't include num (e.g. use DC, not DC1)
 %exclude these from jacksheet and re-ref

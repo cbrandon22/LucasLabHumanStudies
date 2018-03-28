@@ -5,6 +5,9 @@ function oddball_processing(subj)
 task = 'oddball';
 dirs = le_dirs(task);
 saveDir = fullfile(dirs.data,'eeg',subj,'processed');
+lowPassFilt = 1; % Butter+filtfilt low pass filter
+engineersNyquist = 2/5; % frequency for low pass filter (srate*(2/5))
+lowPassOrder = 4;
 filt_ln = 1; % filter 60Hz and harmonics to 300Hz
 check_bad_channels = 0; % double check auto assignment of bad channels (all channels will be saved regardless)
 
@@ -136,15 +139,34 @@ for l=1:length(lead_prefixes)
         elecNum = lead_chs(i);
         eeg(:,:,i) = an_getlfp_ms_wrapper(elecNum,events(stim_events),trial_end-trial_start,trial_start);
         dat = look(lfp_fileroot,elecNum,[],1)';
-        [M,SD,sk,k,med,zlow,zhi,tM,tSD,~,ksh,ksp,ksstat,kscv]=signalstat_cb(dat(length(dat)/3:length(dat)/1.5),0); %use middle 3rd of data to get stats
+        [M,SD,sk,k,med,zlow,zhi,tM,tSD,~,ksh,ksp,ksstat,kscv]=signalstat_cb(dat(round(length(dat)/3):round(length(dat)/1.5)),0); %use middle 3rd of data to get stats
         chan_stats = [chan_stats; elecNum,M,SD,sk,k,med,zlow,zhi,tM,tSD,ksh,ksp,ksstat,kscv];
         if ksstat>0.1,bad_channels = [bad_channels,elecNum];end
     end
-    if filt_ln
+    if lowPassFilt && filt_ln
+        lp_freq = floor(engineersNyquist*srate);
         for c=1:size(eeg,3)
             for ii=1:size(eeg,1)
                 if sum(isnan(eeg(ii,:,c)))<5;
-                    ln = mtmlinenoise(eeg(ii,:,c),3,srate,srate,60:60:300)';
+                    eeg(ii,:,c) = buttfilt(eeg(ii,:,c),lp_freq,srate,'low',lowPassOrder); %low pass
+                    ln = mtmlinenoise(eeg(ii,:,c),3,srate,srate,60:60:300)';% get line noise
+                    eeg(ii,:,c) = eeg(ii,:,c)-ln;
+                end
+            end
+        end
+    elseif lowPassFilt
+        for c=1:size(eeg,3)
+            for ii=1:size(eeg,1)
+                if sum(isnan(eeg(ii,:,c)))<5;
+                    eeg(ii,:,c) = buttfilt(eeg(ii,:,c),lp_freq,srate,'low',lowPassOrder); %low pass
+                end
+            end
+        end
+    elseif filt_ln
+        for c=1:size(eeg,3)
+            for ii=1:size(eeg,1)
+                if sum(isnan(eeg(ii,:,c)))<5;
+                    ln = mtmlinenoise(eeg(ii,:,c),3,srate,srate,60:60:300)'; %get line noise
                     eeg(ii,:,c) = eeg(ii,:,c)-ln;
                 end
             end

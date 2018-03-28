@@ -1,9 +1,9 @@
 function CCDT_behavioral2
 % Quick look at behavioral data for CCDT
-subj = 'HUP143';
+subj = 'HUP133';
 sessNum = []; % Pick specific session(s). Default combines all sessions
 allRTs = CCDTcatBehavioral(subj,sessNum);
-saveFigs = 1;
+saveFigs = 0;
 dirs = le_dirs('CCDT');
 saveFigsDir = fullfile(dirs.scratch,'figs',subj,'behavioral');
 overallTitle = strcat(subj,' CCDT Behavioral Summary');

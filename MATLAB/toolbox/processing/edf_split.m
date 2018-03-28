@@ -25,8 +25,8 @@ function filestem = edf_split(eegfile,subject,outputdir,badLabels)
 %electrodes2jacksheet). Also included badLabels input so that certain leads
 %can be excluded from the montage (e.g., UP044_1 had scalp eeg contacts as
 %well).
-%CLB: on 5/24/17 Updated badLabels to avoid accedentally removing good
-%channels (regexp -> strcmp)
+%CLB: on 5/24/17 Updated badLabels because it was removing good channels 
+%that began with the same string (regexp -> strcmp)
 
 
 
