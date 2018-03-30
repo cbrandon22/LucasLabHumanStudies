@@ -20,7 +20,7 @@ plot_title = [];
 trialType1_label = 'All Tones';
 trialType2_label = [];
 load([ddir '/sessInfo.mat']);
-bad_channels = [bad_channels,25];
+%bad_channels = [bad_channels,25];
 includeTrials = [1 1070];
 %keyboard % manually set and run include trials based on nlxEvents
 
