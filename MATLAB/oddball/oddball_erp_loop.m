@@ -5,16 +5,17 @@ xlfile = fullfile('C:\Users\gregb\Documents\MATLAB\induction_awake');
 for s = 1:length(xlcells)
 subj = xlcells{s,1};
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
-trialType1 = {'TARGETHF','TARGETLF'};
-trialType2 = {'BACKGROUNDHF','BACKGROUNDLF'}; % leave empty to only select trialType1
+trialType1 = {'TARGETHF'};
+trialType2 = {'BACKGROUNDHF'}; % leave empty to only select trialType1
 subtract_trialTypes = 1; %set to 1 to plot difference btw types
 leadAvg_reref = 1; %re-reference to lead average
 % Plot title/legend labels
-plot_title = [];
+plot_title = 'HF Only Pre-intubation ERP Lead Reref';
 trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
-zscore = 1; %z-score electrodes to pre-trial baseline
+zscore = 0; %z-score electrodes to pre-trial baseline
+saveFigsDir = fullfile('D:\figures',subj);
 includeTrials = strsplit(xlcells{s,2});
 includeTrials = [str2double(includeTrials{1}),str2double(includeTrials{2})];
 
@@ -90,7 +91,7 @@ else
         h=imagesc(zerp1);
     end
 end
-title([subj],'Interpreter','none');
+title([subj ' ' plot_title],'Interpreter','none');
 c = colorbar;
 if zscore == 0
     ylabel(c, 'Voltage')
@@ -103,7 +104,11 @@ ylabel('Channels');
 xticklabels = -400:50:950;
 xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
-
+set(gcf, 'Position', [100, 100, 1200, 700])
+if ~exist(saveFigsDir,'dir'),mkdir(saveFigsDir);end
+cd(saveFigsDir);
+print(gcf,[subj ' ' plot_title],'-dpng');
+close;
 end
 
 % keyboard
