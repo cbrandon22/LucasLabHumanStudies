@@ -20,11 +20,14 @@ plot_title = [];
 trialType1_label = 'All Tones';
 trialType2_label = [];
 load([ddir '/sessInfo.mat']);
+if exist(fullfile(ddir,'manual_bad_channels.mat'),'file')==2
+    load(fullfile(ddir,'manual_bad_channels.mat'),'bad_channels')
+end
 includeTrials = [1 size(trial_type,2)];
 %keyboard % manually set and run include trials based on nlxEvents
 %manually edit bad channels and resave file
 %bad_channels = [bad_channels,25];
-%save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
+%save(fullfile(ddir,'manual_bad_channels.mat'),'bad_channels');
 
 %% Setup
 % select trials
