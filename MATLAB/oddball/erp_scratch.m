@@ -10,9 +10,9 @@ leadAvg_reref = 1; %re-reference to lead average
 zscore = 1; %z-score electrodes to pre-trial baseline
 
 % Use these to check different points in data manipulation
-plotLeadSingleTrials = 0; % make single trial plots for each lead
+plotLeadSingleTrials = 1; % make single trial plots for each lead
 overlayReref = 1; % plot rereference result on top of raw signal
-plotLeadAvgTrials = 0; % plot the average across trials
+plotLeadAvgTrials = 1; % plot the average across trials
 zScoreDemoPlots = 1; %single channel z score subplot demonstration
 
 % Plot title/legend labels
@@ -20,9 +20,11 @@ plot_title = [];
 trialType1_label = 'All Tones';
 trialType2_label = [];
 load([ddir '/sessInfo.mat']);
-%bad_channels = [bad_channels,25];
-includeTrials = [1 1070];
+includeTrials = [1 size(trial_type,2)];
 %keyboard % manually set and run include trials based on nlxEvents
+%manually edit bad channels and resave file
+%bad_channels = [bad_channels,25];
+%save(fullfile(ddir,'sessInfo.mat'),'elecInfo','ref','events','trial_type','trial_resp','t','srate','nlxEvents','bad_channels','chan_stats');
 
 %% Setup
 % select trials
@@ -64,7 +66,9 @@ for f=1:length(files)
         load(fullfile(ddir,files(f).name));
         includeChan = ~ismember(cell2mat(lead_elecInfo(:,1)),bad_channels);
         if plotLeadSingleTrials
-            for trial=1:size(eeg,1)
+            skipLead = 0;
+            for trial=includeTrials(1):includeTrials(2)
+                if skipLead==1,break;end
                 cShift = 1.1*max(max(abs(eeg(1,:,:))));
                 cpos = [];
                 bc=0;
@@ -223,22 +227,35 @@ else
     if zscore==0
         h=imagesc(erp1);
     else
-        h=imagesc(zerp1);
+        % no rereference
+        figure('Position',[0 0 960 1080]);
+        h=imagesc(t,1:size(erp_elecInfo,1),zerp1);
+        title([subj ' Average Trial Voltage ' trialType1_label],'Interpreter','none');
+        c = colorbar;
+        if zscore == 0
+            ylabel(c, 'Voltage')
+        else
+            ylabel(c, 'Normalized Voltage')
+        end
+        xlabel('Time');
+        set(gca,'YTick',1:size(erp_elecInfo,1),'YTickLabel', erp_elecInfo(:,3))
+        caxis([-8 8])
+        
+        %use rereference
+        figure('Position',[0 0 960 1080]);
+        h=imagesc(t,1:size(erp_elecInfo,1),zrerp1);
+        title([subj ' Average, Rereferenced Trial Voltage ' trialType1_label],'Interpreter','none');
+        c = colorbar;
+        if zscore == 0
+            ylabel(c, 'Voltage')
+        else
+            ylabel(c, 'Normalized Voltage')
+        end
+        xlabel('Time');
+        set(gca,'YTick',1:size(erp_elecInfo,1),'YTickLabel', erp_elecInfo(:,3))
+        caxis([-8 8])
     end
 end
-title([subj],'Interpreter','none');
-c = colorbar;
-if zscore == 0
-    ylabel(c, 'Voltage')
-else
-    ylabel(c, 'Z-score')
-    caxis([-4,4])
-end
-xlabel('Time');
-ylabel('Channels');
-xticklabels = -400:50:950;
-xticks = linspace(1, size(erp1, 2), numel(xticklabels));
-set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
 
 
 

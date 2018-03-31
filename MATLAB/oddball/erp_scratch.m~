@@ -13,14 +13,14 @@ zscore = 1; %z-score electrodes to pre-trial baseline
 plotLeadSingleTrials = 0; % make single trial plots for each lead
 overlayReref = 1; % plot rereference result on top of raw signal
 plotLeadAvgTrials = 0; % plot the average across trials
-zScoreDemoPlots = 1; %single channel z score subplot demonstration
+zScoreDemoPlots = 0; %single channel z score subplot demonstration
 
 % Plot title/legend labels
 plot_title = [];
 trialType1_label = 'All Tones';
 trialType2_label = [];
 load([ddir '/sessInfo.mat']);
-bad_channels = [bad_channels,25];
+%bad_channels = [bad_channels,25];
 includeTrials = [1 1070];
 %keyboard % manually set and run include trials based on nlxEvents
 
@@ -224,21 +224,21 @@ else
         h=imagesc(erp1);
     else
         h=imagesc(zerp1);
+        title([subj],'Interpreter','none');
+        c = colorbar;
+        if zscore == 0
+            ylabel(c, 'Voltage')
+        else
+            ylabel(c, 'Z-score')
+            caxis([-4,4])
+        end
+        xlabel('Time');
+        ylabel('Channels');
+        xticklabels = -400:50:950;
+        xticks = linspace(1, size(erp1, 2), numel(xticklabels));
+        set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
     end
 end
-title([subj],'Interpreter','none');
-c = colorbar;
-if zscore == 0
-    ylabel(c, 'Voltage')
-else
-    ylabel(c, 'Z-score')
-    caxis([-4,4])
-end
-xlabel('Time');
-ylabel('Channels');
-xticklabels = -400:50:950;
-xticks = linspace(1, size(erp1, 2), numel(xticklabels));
-set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
 
 
 
