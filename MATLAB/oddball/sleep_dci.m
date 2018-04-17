@@ -11,7 +11,7 @@
 % *** see plot_lead_channels.m for prerequisite
 
 clear
-subject_list = {'HUP166_2'};
+subject_list = {'HUP167_a2'};
 ddir = '/Volumes/HumanStudies/HumanStudies/sleep/eeg'; %path to folder containing subjects
 maxSamplesToLoad = 3000000; % break session into blocks of maxSamplesToLoad for speed
 reref_method = 'lead_average'; %'lead_average'
@@ -30,6 +30,14 @@ for subi=1:length(subject_list)
     %load data into electrodes x samples matrix (going to be way too big
     %for high sample rates.) Probably will move this into AR loop to only
     %make matrix of size electrodes x window samples
+    % remove any dc channels if they are included
+    dcChans = {'DC1','DC2','DC3','DC4','DC5','DC6','DC7','DC8','DC9','DC10','DC11','DC12','DC13','DC14'};
+    if sum(ismember(dcChans,elecInfo(:,2)))>0
+        [~,locb]=ismember(dcChans,elecInfo(:,2));
+        for ii=1:length(locb)
+            if locb(ii)~=0, elecInfo(locb(ii),:)=[];end
+        end
+    end
     good_elecInfo = elecInfo(~ismember(cell2mat(elecInfo(:,1)),bad_channels),:);
     if (win-order)<(size(good_elecInfo,1)*order)
         error('window too small')

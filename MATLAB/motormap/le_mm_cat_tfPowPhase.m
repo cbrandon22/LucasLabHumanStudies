@@ -1,4 +1,4 @@
-function [tMat_pow_cat,tStruct_lf,anatAxis,config_pow,insigCentroids,sigCentroids,insigAnat] = le_mm_cat_tfPowPhase(subj,eLbl_list,printFolderLabel,comparison,indvPlot)
+function [tMat_pow_cat,tStruct_lf,anatAxis,config_pow,insigCentroids,sigCentroids,insigAnat] = le_mm_cat_tfPowPhase(subj,eLbl_list,printFolderLabel,comparison,indvPlot,savePowSubset,clus)
 % This function computes power and phase analyses comparing moveWait using
 % parameters set in the config file
 
@@ -25,6 +25,14 @@ if ~exist('comparison','var') || isempty(comparison)
     comparison = config_mm.comparison;
 end
 
+if ~exist('savePowSubset','var') || isempty(savePowSubset)
+    savePowSubset = false;
+end
+
+if ~exist('savePowSubset','var') || isempty(savePowSubset)
+    clus = 'noLbl';
+end
+
 % load tStructs (low frequency, TF plots)
 [tStruct_lf,config_pow] = le_calcTs_wrapper(subj,[],'motormap',[],comparison,...
     config_mm.fRange,config_mm.collapseFreqFlag,config_mm.powConfigNum,eLbl_list);
@@ -38,6 +46,15 @@ end
 if config_mm.tfplot_flag
     %le_plotTs(tStruct_hfa,config_pow,config_mm.tfplot_printFlag,printFolderLabel);
     le_plotTs(tStruct_lf,config_pow,config_mm.tfplot_printFlag,printFolderLabel);
+end
+if savePowSubset
+    save(fullfile(dirs.scratch,'POWER',[subj '_' clus '.mat']),'tStruct_lf');
+    tMat_pow_cat=[];
+    anatAxis=[];
+    insigCentroids=[];
+    sigCentroids=[];
+    insigAnat=[];
+    return
 end
 % concatonate LF TMats for plotting and dimensionality reduction
 tMat_pow_cat = squeeze((nanmean(cat(3,tStruct_lf.tMat),2)))';

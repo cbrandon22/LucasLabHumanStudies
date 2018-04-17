@@ -3,13 +3,13 @@
 % (1) automatically make good_leads
 % (2) re-write jacksheet so it matches up with vox tool
 % USER INPUTS
-subj       = 'HUP166_2';
-task       = 'sleep';
+subj       = 'HUP165';
+task       = 'netLearn';
 rawDirName = '';
 badTags    = {'EKG','ekg','ECG','DC'}; % exclude from re-ref, Don't include num (e.g. use DC, not DC1)
 %exclude these from jacksheet and re-ref
 badLabels = {'Event','EKG1','EKG2','ekg1','ekg2','ECG1','ECG2','DC2','DC3','DC4','DC5',...
-    'DC6','DC7','DC8','DC9','DC10','DC11','DC12','DC13','DC14','DC15',...
+    'DC6','DC8','DC9','DC10','DC11','DC12','DC13','DC14','DC15',...
     'DC16','TRIG','OSAT','PR','Pleth','C8','C43','C44','C45','C46','C47','C48',...
     'C49','C50','C51','C52','C53','C54','C55','C56','C57','C58','C59',...
     'C60','C61','C62','C63','C64','C65','C66','C67','C68','C69','C70',...
@@ -68,6 +68,8 @@ for k=1:length(eegFile)
 end
 fprintf('\n\n')
 
+if ~exist(docsDir,'dir'),mkdir(docsDir);end
+if ~exist(talDir,'dir'),mkdir(talDir);end
 % copy the jacksheet to the docs directory
 jackMotherFile = fullfile(docsDir,'jacksheet.txt');
 if ~exist(jackMotherFile,'file')
@@ -172,7 +174,7 @@ for k=1:length(eegFile)
   thisFileExt = edf_split(eegFile{k},subj,outDir);
   tagNameFile = fullfile(docsDir,'electrodes.m');
   run(tagNameFile)
-  reref({thisFileExt},r,rerefDir,talDir);
+  reref2({thisFileExt},r,rerefDir,talDir);
 end
 
 % mk the bipolar thing

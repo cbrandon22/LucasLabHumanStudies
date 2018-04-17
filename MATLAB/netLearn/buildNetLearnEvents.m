@@ -2,7 +2,7 @@ function buildNetLearnEvents
 % builds events.mat and eeg.eeglog.up for CCDT session. Stores in session folder.
 % events structure with fields:
 % subj,session,trial#,eventType,item,msTime,msOffset
-subj = 'HUP145';
+subj = 'HUP165';
 session = 'Session_0';
 dirs = le_dirs('netLearn');
 
@@ -68,6 +68,7 @@ function [pulses,events] = parseTrainCSV(subj,sessDir,events,pulses)
     thisLine = fgetl(fid);%skip header
     thisLine = fgetl(fid);%first data line
     while ischar(thisLine)
+        if isempty(thisLine),thisLine = fgetl(fid);continue;end
         logLine = strsplit(thisLine,',');
         if strcmp(logLine{1},'extraInfo')
             thisLine = fgetl(fid);% next line
@@ -166,7 +167,7 @@ function [pulses,events] = parseTrainCSV(subj,sessDir,events,pulses)
         events(i).mstime = events(i).mstime+shiftTimes;
     end
     pulses = pulses+shiftTimes;
-    pulses(1)
+    %pulses(1)
 end
 
 function [pulses,events] = parsePracCSV(subj,sessDir,events,pulses)
@@ -185,6 +186,7 @@ function [pulses,events] = parsePracCSV(subj,sessDir,events,pulses)
     thisLine = fgetl(fid);%skip header
     thisLine = fgetl(fid);%first data line
     while ischar(thisLine)
+        if isempty(thisLine),thisLine = fgetl(fid);continue;end
         logLine = strsplit(thisLine,',');
         if strcmp(logLine{1},'extraInfo')
             thisLine = fgetl(fid);% next line
@@ -254,7 +256,7 @@ function [pulses,events] = parsePracCSV(subj,sessDir,events,pulses)
         events(i).mstime = events(i).mstime+shiftTimes;
     end
     pulses(pInd:end) = pulses(pInd:end)+shiftTimes;
-    pulses(pInd)
+    %pulses(pInd)
 end
 
 function [pulses,events] = parseRunCSVs(subj,sessDir,events,pulses)
@@ -274,6 +276,7 @@ function [pulses,events] = parseRunCSVs(subj,sessDir,events,pulses)
         thisLine = fgetl(fid);%skip header
         thisLine = fgetl(fid);%first data line
         while ischar(thisLine)
+            if isempty(thisLine),thisLine = fgetl(fid);continue;end
             logLine = strsplit(thisLine,',');
             if ismember(logLine{1},{'extraInfo',''})
                 thisLine = fgetl(fid);% next line
@@ -344,7 +347,7 @@ function [pulses,events] = parseRunCSVs(subj,sessDir,events,pulses)
             events(i).mstime = events(i).mstime+shiftTimes;
         end
         pulses(pInd:end) = pulses(pInd:end)+shiftTimes;
-        pulses(pInd)
+        %pulses(pInd)
     end
 end
 

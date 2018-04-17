@@ -5,7 +5,7 @@ function oddball_processing(subj)
 task = 'oddball';
 dirs = le_dirs(task);
 saveDir = fullfile(dirs.data,'eeg',subj,'processed');
-lowPassFilt = 1; % Butter+filtfilt low pass filter
+lowPassFilt = 0; % Butter+filtfilt low pass filter
 engineersNyquist = 2/5; % frequency for low pass filter (srate*(2/5))
 lowPassOrder = 4;
 filt_ln = 1; % filter 60Hz and harmonics to 300Hz

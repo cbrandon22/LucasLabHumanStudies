@@ -101,6 +101,18 @@ subjInfo(i).sess       = {'0'};
 subjInfo(i).rawDataPath  = {'2018-01-10_10-50-30'};
 subjInfo(i).logpeg = 1;
 
+i = 17;
+subjInfo(i).subj     = 'HUP166_i';
+subjInfo(i).sess       = {'0'}; 
+subjInfo(i).rawDataPath  = {'2018-03-28_14-18-32'};
+subjInfo(i).logpeg = 1;
+
+i = 18;
+subjInfo(i).subj     = 'HUP165_i';
+subjInfo(i).sess       = {'0'}; 
+subjInfo(i).rawDataPath  = {'2018-04-03_15-50-12'};
+subjInfo(i).logpeg = 1;
+
 % parse input
 if ~exist('subj','var') || isempty(subj)
     return

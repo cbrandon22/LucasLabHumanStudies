@@ -16,11 +16,11 @@ subject_list = {'HUP155_i'};
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball/eeg'; %path to folder containing subjects
 maxSamplesToLoad = 10000000; % break session into blocks of maxSamplesToLoad for speed
 reref_method = 'lead_average'; %'lead_average'
-win_ms = 750;
+win_ms = 500;
 for subi=1:length(subject_list)
     subj = subject_list{subi};
     cond = subj(end); % inductance or emergence
-    order = 1; %maximum order to try
+    order = 2; %maximum order to try
     load(fullfile(ddir,subj,'processed/sessInfo.mat'));
     load(fullfile(ddir,subj,'processed/parameters.mat'));
     
@@ -60,7 +60,7 @@ for subi=1:length(subject_list)
     save(fullfile(save_dir, 'grid_win.mat'), 'win')
     
     pmax = order; 
-    pmin = 1;
+    pmin = 2;
     
     % initialize data structure
     AR_mod = struct();

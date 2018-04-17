@@ -1,9 +1,9 @@
 function nl_example
 %Inputs:
-subj = 'HUP143';
-evFile = '/Volumes/LUCAS_DRIVE/HumanStudies/netLearn/events/HUP143_events.mat';
-eegDir = '/Volumes/LUCAS_DRIVE/HumanStudies/netLearn/eeg/HUP143/eeg.noreref';
-elec = 2;
+subj = 'HUP157';
+evFile = '/Volumes/HumanStudies/HumanStudies/netLearn/eeg/HUP157/behavioral/Session_0/events.mat';
+eegDir = '/Volumes/HumanStudies/HumanStudies/netLearn/eeg/HUP157/eeg.noreref';
+elec = 18;
 signalStartMS = -200;
 signalDuration = 800;
 
@@ -22,4 +22,5 @@ runOnsets = allRunEv & strcmp({events.type},'onset');
 
 %Use boolean array to index into eeg
 eeg = gete_ms_wrapper(elec,events(runOnsets),signalDuration,signalStartMS,[],[],[],[]);
+figure;
 plot(nanmean(eeg,1))

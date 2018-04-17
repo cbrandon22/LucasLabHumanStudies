@@ -3,8 +3,9 @@ clear
 % Inputs:
 subj = 'HUP155_i';
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball';
-tw = '512';
-order = '1';
+tw = '5462';
+order = '2';
+nlxEventsToPlot = [3,4,5,6,7,8,9,11,12,19]; % set manually for each subject
  
 %% load in all related .mat files
 p_dir = fullfile(ddir,'eeg',subj,'processed');
@@ -47,7 +48,6 @@ ylabel('Reaction time (ms)', 'fontsize', 15);
 title('''Go'' Responses', 'fontsize', 20);
 [lh,~]=legend('Correct','Incorrect','Location','southeast');
 ax2=subplot(3,1,[2 3]);
-nlxEventsToPlot = [3,4,5,6,7,8,9,11,12,19]; % set manually for each subject
 plot(time_s/60, med);
 hold on
 nlxEvHandles = [];
@@ -63,7 +63,7 @@ xlabel('Time (minutes)', 'fontsize', 15)
 ylabel('Median', 'fontsize', 15);
 win_ms = num2str(round(win/srate*1000));
 title(['Eigenmode Median (window= ' win_ms 'ms, order= ' order ')'], 'fontsize', 20)
-%legend(nlxEvHandles,nlxEvLabels,'Location','southwest')
+legend(nlxEvHandles,nlxEvLabels,'Location','southwest')
 linkaxes([ax2,ax1],'x');
 %% Plot EM distribution
  

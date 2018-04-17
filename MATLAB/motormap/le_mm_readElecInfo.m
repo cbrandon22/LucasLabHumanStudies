@@ -1,6 +1,6 @@
 function [eInfoStruct] = le_mm_readElecInfo
 % Read ElectrodeInfo.xls and bring in variables
-dirs = le_dirs;
+dirs = le_dirs('motormap');
 cd(dirs.scratch);
 [~,subjects] = xlsread('ElectrodeInfo.xlsx','A1:A1000');
 [~,elecLbl1] = xlsread('ElectrodeInfo.xlsx','B1:B1000');

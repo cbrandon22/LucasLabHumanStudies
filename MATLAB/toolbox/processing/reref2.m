@@ -1,4 +1,4 @@
-function reref(fileroots,grids,outdir,taldir)
+function reref2(fileroots,grids,outdir,taldir)
 %REREF - Rereference EEG recording with weights based on grids.
 %
 % FUNCTION:
