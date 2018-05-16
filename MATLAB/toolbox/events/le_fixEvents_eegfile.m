@@ -1,10 +1,9 @@
-task = 'CCDT';
-subjList = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
-    'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
-    'HUP154'};
-dirs = le_dirs(task);
+task = 'motormap';
+subjList = {'HUP092'};
 for sub=1:length(subjList)
-    load(fullfile(dirs.events,[subjList{sub} '_events']));
+    dirs = le_dirs(task);
+    cd(dirs.events)
+    load([subjList{sub} '_events']);
     for i=1:length(events)
         if ~isempty(events(i).eegfile)
             thisEEGfile = events(i).eegfile;
@@ -17,6 +16,6 @@ for sub=1:length(subjList)
             end
         end
     end
-    save(fullfile(dirs.events,[subjList{sub} '_events.mat']),'events');
+    save([subjList{sub} '_events.mat'],'events');
 end
 disp('done')

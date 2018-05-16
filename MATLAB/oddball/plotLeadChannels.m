@@ -1,10 +1,10 @@
 % Manually check processed neuralynx signal (uses an_processSubj files and
 % oddball_processing files)
 clear
-subj = 'HUP155_i';
+subj = 'HUP165_i';
 task = 'oddball';
 ddir = fullfile('/Volumes/HumanStudies/HumanStudies',task,'eeg',subj,'processed');
-plot_processed = 1; %use for non-task data (emu sleep)
+plot_processed = 0; %use for non-task data (emu sleep)
 
 
 %% Calculate and plot ERPs
@@ -27,7 +27,7 @@ for i=1:length(files)
 end
 keyboard
 % Manually fix bad_channels and re-save sessInfo.mat if altered
-bad_channels = [188,192,170,171,101,102,103,104,105,106,107,108,109,97,76,53,2];
+bad_channels = [51,52];
 %save(fullfile(ddir,'sessInfo.mat'),'elecInfo','bad_channels','srate','dat_gain');
 save(fullfile(ddir,'manual_bad_channels.mat'),'bad_channels');
 %% Set dynamical criticality parameters
@@ -47,7 +47,7 @@ figure
 plot(dat(minInd-50:minInd+50)); %plot samples around min value
 
 % set and save parameters (get ana/coc from nlxEvents)
-parameters.ana = [4433114]; % anesthesia drug start/stop
-parameters.coc = [19169037]; % change of consciousness (unresponsive<->responsive or intubation/extubation)
+parameters.ana = [3705450]; % anesthesia drug start/stop
+parameters.coc = [22981315]; % change of consciousness (unresponsive<->responsive or intubation/extubation)
 parameters.artifact = []; % Artifact in electrical signal
 save(fullfile(ddir,'parameters.mat'),'parameters');

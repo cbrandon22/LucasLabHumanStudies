@@ -1,11 +1,11 @@
 %% Make plots from oddball_dci.m saved output
 clear
 % Inputs:
-subj = 'HUP155_i';
+subj = 'HUP165_i';
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball';
 tw = '5462';
-order = '2';
-nlxEventsToPlot = [3,4,5,6,7,8,9,11,12,19]; % set manually for each subject
+order = '1';
+nlxEventsToPlot = [3,5,6,7,10,11,13];%[3,4,5,6,7,8,9,11,12,19]; % set manually for each subject
  
 %% load in all related .mat files
 p_dir = fullfile(ddir,'eeg',subj,'processed');

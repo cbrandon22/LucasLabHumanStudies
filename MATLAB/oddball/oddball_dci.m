@@ -6,21 +6,20 @@
 % Find the eigenvalues of this model
 % Plot
 %
-% @author JStiso 02/2017
-% dynamical_criticality_index.m edited by CBrandon 02/2018 for oddball data
+% dynamical_criticality_index.m (JStiso 02/2017) edited by CBrandon 02/2018 for oddball data
 % *** see oddball_processing.m and plot_lead_channels.m for prerequisite
 % variables (sessInfo, parameters)***
 
 clear
-subject_list = {'HUP155_i'};
+subject_list = {'HUP165_i'};
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball/eeg'; %path to folder containing subjects
-maxSamplesToLoad = 10000000; % break session into blocks of maxSamplesToLoad for speed
+maxSamplesToLoad = 8000000; % break session into blocks of maxSamplesToLoad for speed
 reref_method = 'lead_average'; %'lead_average'
 win_ms = 500;
 for subi=1:length(subject_list)
     subj = subject_list{subi};
     cond = subj(end); % inductance or emergence
-    order = 2; %maximum order to try
+    order = 1; %maximum order to try
     load(fullfile(ddir,subj,'processed/sessInfo.mat'));
     load(fullfile(ddir,subj,'processed/parameters.mat'));
     
@@ -60,7 +59,7 @@ for subi=1:length(subject_list)
     save(fullfile(save_dir, 'grid_win.mat'), 'win')
     
     pmax = order; 
-    pmin = 2;
+    pmin = 1;
     
     % initialize data structure
     AR_mod = struct();

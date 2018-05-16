@@ -10,9 +10,9 @@ leadAvg_reref = 1; %re-reference to lead average
 zscore = 1; %z-score electrodes to pre-trial baseline
 
 % Use these to check different points in data manipulation
-plotLeadSingleTrials = 1; % make single trial plots for each lead
+plotLeadSingleTrials = 0; % make single trial plots for each lead
 overlayReref = 1; % plot rereference result on top of raw signal
-plotLeadAvgTrials = 1; % plot the average across trials
+plotLeadAvgTrials = 0; % plot the average across trials
 zScoreDemoPlots = 1; %single channel z score subplot demonstration
 
 % Plot title/legend labels

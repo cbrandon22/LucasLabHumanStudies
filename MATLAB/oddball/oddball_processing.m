@@ -106,7 +106,7 @@ end
 %create eeg matrix channel x trial ms x trial number
 trial_start = -400;
 trial_end = 950;
-stim_ev_types = {'BACKGROUNDLF','BACKGROUNDHF','TARGETLF','TARGETHF','GO','NOGO'};
+stim_ev_types = {'BACKGROUNDLF','BACKGROUNDHF','TARGETLF','TARGETHF','GO','NO_GO'};
 stim_events = ismember({events.type},stim_ev_types);
 if sum(stim_events(end-2:end))>0 %last trial was cut short, ignore
     stim_events(end-2:end) = false;
