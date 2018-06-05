@@ -11,20 +11,36 @@
 % variables (sessInfo, parameters)***
 
 clear
-subject_list = {'HUP165_i'};
+subject_list = {'HUP155_i'};
 ddir = '/Volumes/HumanStudies/HumanStudies/oddball/eeg'; %path to folder containing subjects
-maxSamplesToLoad = 8000000; % break session into blocks of maxSamplesToLoad for speed
+maxSamplesToLoad = 1000000; % break session into blocks of maxSamplesToLoad for speed
 reref_method = 'lead_average'; %'lead_average'
 win_ms = 500;
+decimate_factor = 10; % set to 0 to skip filter
+plot_detrend = 0;
+plot_coef_mat = 0;
+calc_pow_spect = 1;
 for subi=1:length(subject_list)
     subj = subject_list{subi};
     cond = subj(end); % inductance or emergence
     order = 1; %maximum order to try
     load(fullfile(ddir,subj,'processed/sessInfo.mat'));
     load(fullfile(ddir,subj,'processed/parameters.mat'));
+    if exist(fullfile(ddir,subj,'processed/manual_bad_channels.mat'),'file')==2
+        load(fullfile(ddir,subj,'processed/manual_bad_channels.mat'));
+    end
     
-    win = round(win_ms*(srate/1000));
-    ref_num = floor(5*srate/win); % number of time bins to use as a conscious reference distribution: should equal 5 seconds
+    if decimate_factor > 0
+        orig_win = round(win_ms*(srate/1000));
+        win = ceil(win_ms*(srate/1000)/decimate_factor);
+        ref_num = ceil((5*srate/win)/decimate_factor); % number of time bins to use as a conscious reference distribution: should equal 5 seconds
+        parameters.ana = ceil(parameters.ana/decimate_factor);
+        parameters.coc = ceil(parameters.coc/decimate_factor);
+        parameters.artifact = ceil(parameters.artifact/decimate_factor);
+    else
+        win = round(win_ms*(srate/1000));
+        ref_num = floor(5*srate/win); % number of time bins to use as a conscious reference distribution: should equal 5 seconds
+    end
     coc = floor(parameters.coc/win);
     ana_start = round(parameters.ana/win);
     
@@ -36,7 +52,28 @@ for subi=1:length(subject_list)
         error('window too small')
     end
     dat = look(events(1).lfpfile,good_elecInfo{1,1},[],1)';
-    numSessSamples = length(dat);
+    originalTime = linspace(0, size(dat,2)/srate, size(dat,2));
+    if calc_pow_spect
+        for chan = 1:size(good_elecInfo,1)
+            dat = look(events(1).lfpfile,good_elecInfo{chan,1},[],1)';
+            freq = [0.1 10000];
+            type='bandpass';
+            [pxx,f] = pwelch(dat,10*fix(srate),1*fix(srate),logspace(log10(freq(1)),log10(freq(2)),5000),srate);
+            figure('Name',subj,'NumberTitle','off','Units','normalized','Position',[1/4 1/4 1/2 1/2],'Color','w');
+            plot(f,pxx);
+            axis tight; set(gca,'Box','off','XScale','log','YScale','log');
+            xlabel('frequency (Hz)'); ylabel('power (\muV^2/Hz)'); title([subj ' ' good_elecInfo{chan,3}],'Interpreter', 'none');
+            saveas(gcf,fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/POWER/figs',[subj '_' num2str(chan) '.png']));
+            close
+        end
+        return
+    end
+    if decimate_factor > 0;
+        filtTime = originalTime(1:decimate_factor:end);
+        numSessSamples = ceil(length(dat)/decimate_factor);
+    else
+        numSessSamples = length(dat);
+    end
     if numSessSamples<maxSamplesToLoad % load full session now
         data = ones(size(good_elecInfo,1),numSessSamples)*NaN;
         for chan = 1:size(good_elecInfo,1)
@@ -51,10 +88,14 @@ for subi=1:length(subject_list)
     end
     leads = regexp({good_elecInfo{:,3}},'\D*','match');
     leads = vertcat(leads{:});
-    [lead_prefix,~,lead_ind] = unique(leads);
+    [lead_prefix,ia,lead_ind] = unique(leads);
+    lead_lbls = cell(1,length(leads));
+    for l=1:length(lead_prefix)
+        lead_lbls(ia(l) + floor(sum(lead_ind==l)/2)) = lead_prefix(l);
+    end
     
     % save window
-    save_dir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci',subj,reref_method,['tw' num2str(win)],'Analysis');
+    save_dir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci',subj,reref_method,num2str(decimate_factor),['tw' num2str(win)],'Analysis');
     if ~exist(save_dir),mkdir(save_dir);end
     save(fullfile(save_dir, 'grid_win.mat'), 'win')
     
@@ -64,17 +105,27 @@ for subi=1:length(subject_list)
     % initialize data structure
     AR_mod = struct();
     
-    % for every 300ms time window, get coefficient matrix
+    % for every time window, get coefficient matrix
     for sBlock=1:sessBlocks
         fprintf('loading data block %d of %d (%d time windows per block)\n', sBlock,sessBlocks,nBlockWin);
         if sessBlocks~=1
-            bStartInd = (sBlock-1)*nBlockWin*win+1;
+            bStartInd = (sBlock-1)*nBlockWin*win+1; %first sample in sess block
             bEndInd = sBlock*nBlockWin*win;%last sample in sess block
             if bEndInd>numSessSamples,bEndInd=numSessSamples;end
             data = ones(size(good_elecInfo,1),bEndInd-(bStartInd-1))*NaN;
             for chan = 1:size(good_elecInfo,1)
                 dat = look(events(1).lfpfile,good_elecInfo{chan,1},[],1)';
-                data(chan,:) = dat(bStartInd:bEndInd); % trim to only include this window (keeps matrix at manageable size)
+                if decimate_factor > 0
+                    temp = decimate(dat,decimate_factor); % trim to only include this window (keeps matrix at manageable size)
+                    data(chan,:) = temp(bStartInd:bEndInd);
+                    figure
+                    hold on
+                    plot(originalTime,dat)
+                    plot(filtTime,temp)
+                    set(gca,'XLim',[1500 1502]);
+                else
+                    data(chan,:) = dat(bStartInd:bEndInd);
+                end
             end
         else
             bStartInd = 1;
@@ -96,12 +147,45 @@ for subi=1:length(subject_list)
             % detrend data (avoids interpretation of lf oscillations as exponential growth/decay)
             n_data = detrend(data(:,winSamples)');
             %n_data = n_data - mean(mean(n_data))';
+            if plot_detrend
+                win_t = linspace(1,max(winSamples)/srate*1000,max(winSamples));
+                for l=1:max(lead_ind)
+                    cShift = 1.1*max(max(abs(data(lead_ind==l,winSamples))));
+                    cpos = [];
+                    figure('Position',[0 0 1920 1080])
+                    hold on
+                    lead_chan = find(lead_ind==l);
+                    for c=1:length(lead_chan)
+                        plot(win_t,data(lead_chan(c),winSamples)+((c-1)*cShift),'Color',[0, 0.4470, 0.7410]);
+                        plot(win_t,n_data(:,lead_chan(c))+((c-1)*cShift),'Color',[0.8500, 0.3250, 0.0980]);
+                        plot([win_t(1), win_t(end)],[((c-1)*cShift), ((c-1)*cShift)],'k','LineWidth',0.5)
+                        cpos= [cpos, ((c-1)*cShift)];
+                    end
+                    legend('raw','detrend')
+                    clbls = good_elecInfo(lead_ind==l,3);
+                    set(gca,'YTick',cpos,'YTickLabels',clbls,'FontSize',20);
+                    title([subj '   Lead: ' lead_prefix{l} '   Window: ' num2str(cnt)],'Interpreter', 'none');
+                    xlabel('Time (ms)');
+                    ylabel('Channel');
+                    keyboard
+                end
+            end
              
             % sbc stands for schwartz criterion
             % w = intercepts (should be 0), A is coefficient matrix, C is noise
             % covariance, th is needed for confidence interval calculation
             % w is returning non zero val, not sure why
             [w,A,C,SBC,FPE,th] = arfit(n_data,pmin,pmax,'sbc'); % data_n should be a time chunk;
+            
+            if plot_coef_mat
+                figure;
+                imagesc(A)
+                set(gca,'XTick',[1:length(lead_lbls)],'XTickLabels',lead_lbls,'YTick',[1:length(lead_lbls)],'YTickLabels',lead_lbls,'Box','off','TickLength',[0.001 0.025])
+                c = colorbar;
+                ylabel(c,'coefficient')
+                caxis([-0.35 0.5])
+                title([subj '   Time Window ' num2str(cnt) ' coefficient matrix'],'interpreter','none');
+            end
             
             % get optimal order
             popt = size(A,2)/size(good_elecInfo,1); % size(A,2) = optimal order * number of channels
@@ -186,7 +270,11 @@ for subi=1:length(subject_list)
     else
         % for plotting
         %time_s = ((1:size(AR_mod,2)).*win - hw)./srate;
-        time_s = ((1:size(AR_mod,2)).*win - (win/2))./srate;
+        if decimate_factor > 0 
+            time_s = ((1:size(AR_mod,2)).*win - (win/2))./ceil(srate/decimate_factor);
+        else
+            time_s = ((1:size(AR_mod,2)).*win - (win/2))./srate;
+        end
     end
     % get change of consciousness in seconds
     coc = time_s(coc);
@@ -200,6 +288,7 @@ for subi=1:length(subject_list)
     end
     save([save_dir, '/order_', num2str(popt), '/AR_mod'], 'AR_mod', '-v7.3');
     save([save_dir, '/order_', num2str(popt), '/time_s'], 'time_s', '-v7.3');
+    save([save_dir, '/order_', num2str(popt), '/filtTime'], 'filtTime');
     
     %% Plot median over time
     
