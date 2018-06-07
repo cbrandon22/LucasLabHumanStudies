@@ -55,16 +55,34 @@ for subi=1:length(subject_list)
     originalTime = linspace(0, size(dat,2)/srate, size(dat,2));
     if calc_pow_spect
         for chan = 1:size(good_elecInfo,1)
+            powFigDir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/POWER/figs',subj,good_elecInfo{chan,3});
+            if ~exist(powFigDir,'dir')
+                mkdir(powFigDir);
+            end
             dat = look(events(1).lfpfile,good_elecInfo{chan,1},[],1)';
+            winPerSess = 10;
+            samplesPerWin = floor(size(dat,2)/winPerSess);
+            winDur = samplesPerWin/srate/60; %window duration in minutes
             freq = [0.1 10000];
             type='bandpass';
-            [pxx,f] = pwelch(dat,10*fix(srate),1*fix(srate),logspace(log10(freq(1)),log10(freq(2)),5000),srate);
-            figure('Name',subj,'NumberTitle','off','Units','normalized','Position',[1/4 1/4 1/2 1/2],'Color','w');
-            plot(f,pxx);
-            axis tight; set(gca,'Box','off','XScale','log','YScale','log');
-            xlabel('frequency (Hz)'); ylabel('power (\muV^2/Hz)'); title([subj ' ' good_elecInfo{chan,3}],'Interpreter', 'none');
-            saveas(gcf,fullfile('/Volumes/HumanStudies/HumanStudies/oddball/scratch/POWER/figs',[subj '_' num2str(chan) '.png']));
-            close
+            for ii=1:winPerSess+1
+                if ii<=winPerSess
+                    d=dat((ii-1)*samplesPerWin+1:(ii-1)*samplesPerWin+samplesPerWin);
+                    winStr = sprintf('Minutes: %0.2f - %0.2f',(ii-1)*winDur,(ii-1)*winDur+winDur);
+                else
+                    d=dat(end-samplesPerWin:end);
+                    winStr = sprintf('Minutes: %0.2f - %0.2f',(length(dat)/srate/60)-winDur,length(dat)/srate/60);
+                end
+                [pxx,f] = pwelch(d,10*fix(srate),1*fix(srate),logspace(log10(freq(1)),log10(freq(2)),1000),srate);
+                figure('Name',subj,'NumberTitle','off','Units','normalized','Position',[1/4 1/4 1/2 1/2],'Color','w');
+                plot(f,pxx);
+                axis tight; set(gca,'Box','off','XScale','log','YScale','log');
+                xlabel('frequency (Hz)'); ylabel('power (\muV^2/Hz)'); 
+                title([subj ' ' good_elecInfo{chan,3} ' ' winStr],'Interpreter', 'none');
+                saveas(gcf,[powFigDir '/' num2str(ii) '.png']);
+                close
+            end
+            keyboard
         end
         return
     end

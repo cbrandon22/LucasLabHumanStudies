@@ -2,7 +2,7 @@
 clear;
 % subjList = {'HUP142_i','HUP144_e','HUP145_e','HUP147_e','HUP148_e','HUP149_e','HUP150_i','HUP151_e',...
 %     'HUP152_e','HUP153_i','HUP154_e','HUP155_i','HUP156_i','HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
-subjList = {'HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
+subjList = {'HUP149_e'};%,'HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
 for s=1:length(subjList)
     subj = subjList{s};
     %ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
@@ -18,6 +18,7 @@ for s=1:length(subjList)
     plotLeadSingleTrials = 0; % make single trial plots for each lead
     overlayReref = 1; % plot rereference result on top of raw signal
     plotLeadAvgTrials = 0; % plot the average across trials
+    elecTimePlot = 1; % imagesc plot of single electrode over time
     zScoreDemoPlots = 0; %single channel z score subplot demonstration
     respDistPlots = 1; %plot distance from first responding electrode x response time
     savePlots = 1;
@@ -33,6 +34,19 @@ for s=1:length(subjList)
         load(fullfile(ddir,'manual_bad_channels.mat'),'bad_channels')
     end
     includeTrials = [1 size(trial_type,2)];
+    if elecTimePlot
+        load('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci/plotEventsStruct.mat');
+        if ismember(subj,{plotEventsStruct.subj})
+            [~, sInd] = ismember(subj,{plotEventsStruct.subj});
+            nlxEventsToPlot = plotEventsStruct(sInd).events;
+        else
+            disp('Select neuralynx events to plot for this patient')
+            keyboard; % Edit the events field and run the next 3 lines:
+            plotEventsStruct(length(plotEventsStruct)+1).subj = subj;
+            plotEventsStruct(length(plotEventsStruct)).events = [8,9,10,14,15,17,19,22];
+            save('/Volumes/HumanStudies/HumanStudies/oddball/scratch/dci/plotEventsStruct.mat','plotEventsStruct');
+        end
+    end
     %keyboard % manually set and run include trials based on nlxEvents
     %manually edit bad channels and resave file
     %bad_channels = [bad_channels,25];
@@ -110,14 +124,21 @@ for s=1:length(subjList)
                     keyboard
                 end
             end
-            if leadAvg_reref
+            if leadAvg_reref && elecTimePlot
                 lead_avg = nanmean(eeg(:,:,includeChan),3);
                 reeg=bsxfun(@minus,eeg,lead_avg);
                 rerp1(goodChan+1:goodChan+sum(includeChan),:) = squeeze(nanmean(reeg(includeTrials1,:,includeChan),1))';
-                trialsPerWin = 10;
-                winERP = ones(floor(sum(includeTrials1)/trialsPerWin),size(t,2),sum(includeChan))*NaN;
+                winPerSess = 50;
+                chanPlotDir = [saveDir,'/channelTimePlots/' num2str(winPerSess) '/'];
+                if ~exist(chanPlotDir,'dir')
+                    mkdir(chanPlotDir)
+                end
+                trialsPerWin = floor(size(eeg,1)/winPerSess);
+                excludeTrials = size(eeg,1)-(winPerSess*trialsPerWin); %used to exclude early trials rather than late
+                [~,toneInd] = min(abs(t-0));
                 for c=1:sum(includeChan)
-                    trialInd = 1;
+                    winErp = ones(floor(sum(includeTrials1)/trialsPerWin),size(t,2))*NaN;
+                    trialInd = max(find(includeTrials1,excludeTrials))+1; 
                     for trialWin = 1:floor(sum(includeTrials1)/trialsPerWin)
                         winTrials = [];
                         while length(winTrials)<trialsPerWin
@@ -126,7 +147,33 @@ for s=1:length(subjList)
                             end
                             trialInd = trialInd+1;
                         end
-                        winErp(trialWin,:,c) = sqeeze(nanmean(reeg(winTrials,:,c),1))';
+                        winErp(trialWin,:) = squeeze(nanmean(reeg(winTrials,:,c),1))';
+                    end
+                    winErp(~any(~isnan(winErp), 2),:)=[];
+                    winErpMean = mean(winErp(:,t<0),2);
+                    winErpStd = std(winErp(:,t<0),0,2);
+                    winErp = bsxfun(@minus,winErp,winErpMean);
+                    winErp = bsxfun(@rdivide,winErp,winErpStd);
+                    figure('Position',[0 0 960 1080]);
+                    imagesc(t,[1:size(winErp,1)],winErp);
+                    hold on
+                    nlxEvHandles = [];
+                    for ii=1:length(nlxEventsToPlot)
+                        blkNum = ceil((nlxEvents(nlxEventsToPlot(ii)).approxTrial-excludeTrials)/trialsPerWin);
+                        h=plot([t(1) 0], [blkNum blkNum]);
+                        nlxEvHandles = [nlxEvHandles,h];
+                    end
+                    xlabel('Time (ms)');
+                    ylabel('Trial Block');
+                    cb = colorbar;
+                    ylabel(cb, 'Voltage');
+                    title([subj '   Channel ' lead_elecInfo{c,3} '   Trials per Row: ' num2str(trialsPerWin)],'Interpreter','none')
+                    caxis([-8 8]);
+                    nlxEvLabels = {nlxEvents(nlxEventsToPlot).type};
+                    legend(nlxEvHandles,nlxEvLabels,'Location','northeast')
+                    if savePlots
+                        print(gcf,[chanPlotDir lead_elecInfo{c,3} '.png'],'-dpng');
+                        close
                     end
                 end
             end
@@ -293,8 +340,8 @@ for s=1:length(subjList)
     %% Sort by first change post-tone
     keyboard
     [~,toneInd] = min(abs(t-0));
-    zThresh = 4; % find z score values above this threshold
-    consecutiveThresh = 10; % number of significant electrodes in a row
+    zThresh = 4; % find z score values above/below this threshold
+    consecutiveThresh = 10; % number of significant samples in a row
     respInd = zeros(size(zrerp1,1),1);
     for chan=1:size(zrerp1,1)
         startSig = strfind(abs(zrerp1(chan,toneInd:end))>zThresh,ones(1,consecutiveThresh));
