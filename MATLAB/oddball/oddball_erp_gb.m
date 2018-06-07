@@ -1,23 +1,21 @@
  %% Inputs 
 clear;
-xlfile = fullfile('C:\Users\gregb\Documents\MATLAB\induction_awake');
-[~,~,xlcells] = xlsread(xlfile);
-for s = 1:length(xlcells)
-subj = xlcells{s,1};
+subj = 'HUP148_e';
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
-trialType1 = {'TARGETHF'};
-trialType2 = {'BACKGROUNDHF'}; % leave empty to only select trialType1
+% ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
+% trialType1 = {'TARGETHF','TARGETLF','BACKGROUNDHF','BACKGROUNDLF'};
+trialType1 = {'TARGETLF','TARGETHF'};
+trialType2 = {'BACKGROUNDLF','BACKGROUNDHF'}; % leave empty to only select trialType1
 subtract_trialTypes = 1; %set to 1 to plot difference btw types
 leadAvg_reref = 1; %re-reference to lead average
 % Plot title/legend labels
-plot_title = 'HF Only Pre-intubation ERP Lead Reref';
+plot_title = [];
 trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
-zscore = 0; %z-score electrodes to pre-trial baseline
-saveFigsDir = fullfile('D:\figures',subj);
-includeTrials = strsplit(xlcells{s,2});
-includeTrials = [str2double(includeTrials{1}),str2double(includeTrials{2})];
+zscore = 1; %z-score electrodes to pre-trial baseline
+includeTrials = [300 1030];
+keyboard % manually set and run include trials based on nlxEvents
 
 %%
 includeTrials1 = ismember(trial_type,trialType1);
@@ -83,33 +81,32 @@ if subtract_trialTypes
         h=imagesc(mmn);
     else
         h=imagesc(zmmn);
+        caxis([-8 8])
     end
 else
     if zscore==0
         h=imagesc(erp1);
     else
         h=imagesc(zerp1);
+        caxis([-8 8])
     end
 end
-title([subj ' ' plot_title],'Interpreter','none');
+% title([subj],'Interpreter','none');
 c = colorbar;
 if zscore == 0
     ylabel(c, 'Voltage')
 else
     ylabel(c, 'Z-score')
-    caxis([-4,4])
+    caxis([-8 8])
 end
 xlabel('Time');
 ylabel('Channels');
 xticklabels = -400:50:950;
 xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
-set(gcf, 'Position', [100, 100, 1200, 700])
-if ~exist(saveFigsDir,'dir'),mkdir(saveFigsDir);end
-cd(saveFigsDir);
-print(gcf,[subj ' ' plot_title],'-dpng');
-close;
-end
+set(gca,'YTick',1:size(erp_elecInfo,1),'YTickLabel', erp_elecInfo(:,3))
+
+
 
 % keyboard
 %sample single channel

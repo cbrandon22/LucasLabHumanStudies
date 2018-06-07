@@ -1,11 +1,11 @@
  %% Inputs 
 clear;
-subj = 'HUP150_i';
+subj = 'HUP149_e';
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
-trialType1 = {'TARGETHF','BACKGROUNDHF'};
-% trialType1 = {'BACKGROUNDHF','BACKGROUNDLF'};
-trialType2 = {}; % leave empty to only select trialType1
-subtract_trialTypes = 0; %set to 1 to plot difference btw types
+trialType1 = {'TARGETHF'};
+trialType2 = {'BACKGROUNDHF'};
+% trialType2 = {}; % leave empty to only select trialType1
+subtract_trialTypes = 1; %set to 1 to plot difference btw types
 leadAvg_reref = 1; %re-reference to lead average
 % Plot title/legend labels
 plot_title = [];
