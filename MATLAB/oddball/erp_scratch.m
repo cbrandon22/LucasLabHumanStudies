@@ -340,8 +340,8 @@ for s=1:length(subjList)
     %% Sort by first change post-tone
     keyboard
     [~,toneInd] = min(abs(t-0));
-    zThresh = 4; % find z score values above this threshold
-    consecutiveThresh = 10; % number of significant electrodes in a row
+    zThresh = 4; % find z score values above/below this threshold
+    consecutiveThresh = 10; % number of significant samples in a row
     respInd = zeros(size(zrerp1,1),1);
     for chan=1:size(zrerp1,1)
         startSig = strfind(abs(zrerp1(chan,toneInd:end))>zThresh,ones(1,consecutiveThresh));
