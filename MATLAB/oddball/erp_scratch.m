@@ -1,10 +1,6 @@
  %% Inputs 
 clear;
-% subjList = {'HUP142_i','HUP144_e','HUP145_e','HUP147_e','HUP148_e','HUP149_e','HUP150_i','HUP151_e',...
-%     'HUP152_e','HUP153_i','HUP154_e','HUP155_i','HUP156_i','HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
-subjList = {'HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
-for s=1:length(subjList)
-    subj = subjList{s};
+    subj = 'HUP149_i';
     %ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
     ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
     elec_coordinates_file = fullfile('/Volumes/HumanStudies/HumanStudies/localization',subj(1:end-2),'post/electrodenames_coordinates_native.csv');
@@ -328,7 +324,7 @@ for s=1:length(subjList)
         close;
     end
     
-    % get centroids
+%% get centroids
     fid = fopen(elec_coordinates_file);
     if fid==-1
         disp(['Missing coordinates for ' subj]);
@@ -408,7 +404,7 @@ for s=1:length(subjList)
             end
         end
     end
-end
+
 
 % keyboard
 %sample single channel
