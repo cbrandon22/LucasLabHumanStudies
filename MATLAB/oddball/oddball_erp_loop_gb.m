@@ -1,20 +1,29 @@
  %% Inputs 
 clear;
-subj = 'HUP149_e';
+% xlfile = fullfile('C:\Users\gregb\Documents\MATLAB\induction_awake');
+% [~,~,xlcells] = xlsread(xlfile);
+% for s = 1:length(xlcells)
+% subj = xlcells{s,1};
+% subjlist = {'HUP144_e','HUP145_e','HUP147_e','HUP148_e','HUP149_e','HUP151_e','HUP152_e','HUP153_i'};
+subjlist = {'HUP156_i','HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
+for s=1:(length(subjlist))
+subj = char(subjlist(s))
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
-% ddir = fullfile('/Volumes/HumanStudies/HumanStudies/oddball/eeg',subj,'processed');
-trialType1 = {'TARGETHF','TARGETLF'};
-trialType2 = {'BACKGROUNDHF','BACKGROUNDLF'}; % leave empty to only select trialType1
+trialType1 = {'TARGETLF'};
+trialType2 = {'BACKGROUNDLF'}; % leave empty to only select trialType1
 subtract_trialTypes = 1; %set to 1 to plot difference btw types
 leadAvg_reref = 1; %re-reference to lead average
 % Plot title/legend labels
-plot_title = [];
+plot_title = 'Target-background LF';
 trialType1_label = 'Target';
 trialType2_label = 'Background';
 load([ddir '/sessInfo.mat']);
 zscore = 1; %z-score electrodes to pre-trial baseline
-includeTrials = [1 600];
-keyboard % manually set and run include trials based on nlxEvents
+saveFigsDir = fullfile('D:\figures',subj);
+includeTrials = [1 size(trial_type,2)];
+
+% includeTrials = strsplit(xlcells{s,2});
+% includeTrials = [str2double(includeTrials{1}),str2double(includeTrials{2})];
 
 %%
 includeTrials1 = ismember(trial_type,trialType1);
@@ -80,29 +89,35 @@ if subtract_trialTypes
         h=imagesc(mmn);
     else
         h=imagesc(zmmn);
+        caxis([-8,8])
     end
 else
     if zscore==0
         h=imagesc(erp1);
     else
         h=imagesc(zerp1);
+        caxis([-8,8])
     end
 end
-title([subj],'Interpreter','none');
+title([subj ' ' plot_title],'Interpreter','none');
 c = colorbar;
 if zscore == 0
     ylabel(c, 'Voltage')
 else
     ylabel(c, 'Z-score')
-    caxis([-4,4])
+    caxis([-8,8])
 end
 xlabel('Time');
 ylabel('Channels');
 xticklabels = -400:50:950;
 xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
-
-
+set(gcf, 'Position', [100, 100, 1200, 700])
+if ~exist(saveFigsDir,'dir'),mkdir(saveFigsDir);end
+cd(saveFigsDir);
+print(gcf,[subj ' ' plot_title],'-dpng');
+close;
+end
 
 % keyboard
 %sample single channel
