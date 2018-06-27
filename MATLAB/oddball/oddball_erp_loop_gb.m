@@ -5,7 +5,8 @@ clear;
 % for s = 1:length(xlcells)
 % subj = xlcells{s,1};
 % subjlist = {'HUP144_e','HUP145_e','HUP147_e','HUP148_e','HUP149_e','HUP151_e','HUP152_e','HUP153_i'};
-subjlist = {'HUP156_i','HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
+% subjlist = {'HUP156_i','HUP157_e','HUP159_e','HUP165_i','HUP166_i'};
+subjlist= {'HUP149_e'};
 for s=1:(length(subjlist))
 subj = char(subjlist(s))
 ddir = fullfile('D:\TNL_Data\oddball\eeg',subj,'processed');
@@ -21,6 +22,7 @@ load([ddir '/sessInfo.mat']);
 zscore = 1; %z-score electrodes to pre-trial baseline
 saveFigsDir = fullfile('D:\figures',subj);
 includeTrials = [1 size(trial_type,2)];
+sorting = 1;
 
 % includeTrials = strsplit(xlcells{s,2});
 % includeTrials = [str2double(includeTrials{1}),str2double(includeTrials{2})];
@@ -112,11 +114,43 @@ ylabel('Channels');
 xticklabels = -400:50:950;
 xticks = linspace(1, size(erp1, 2), numel(xticklabels));
 set(gca, 'XTick', xticks, 'XTickLabel', xticklabels)
-set(gcf, 'Position', [100, 100, 1200, 700])
+set(gcf, 'Position', [100, 100, 1400, 1200])
+%% Sort by first change post-tone
+if sorting
+    [~,toneInd] = min(abs(t-0));
+    zThresh = 4; % find z score values above this threshold
+    consecutiveThresh = 10; % number of significant electrodes in a row
+    respInd = zeros(size(zerp1,1),1);
+    for chan=1:size(zerp1,1)
+        startSig = strfind(abs(zerp1(chan,toneInd:end))>zThresh,ones(1,consecutiveThresh));
+        if ~isempty(startSig)
+            respInd(chan) = toneInd+startSig(1)-1;
+        else
+            respInd(chan) = size(zerp1,2);
+        end
+    end
+    [respInd,channelOrder] = sort(respInd);
+    respSeq_elecInfo = erp_elecInfo(channelOrder,:);
+    close;
+    
+    %% reorder z-score erp plot by response time
+    figure('Position',[0 0 1400 1200]);
+    h=imagesc(t,1:size(erp_elecInfo,1),zerp1(channelOrder,:));
+    title([subj ' ' plot_title],'Interpreter','none');
+    c = colorbar;
+    if zscore == 0
+        ylabel(c, 'Voltage')
+    else
+        ylabel(c, 'Normalized Voltage')
+    end
+    xlabel('Time');
+    set(gca,'YTick',1:size(respSeq_elecInfo,1),'YTickLabel', respSeq_elecInfo(:,3))
+    caxis([-8 8])
+end
+%%
 if ~exist(saveFigsDir,'dir'),mkdir(saveFigsDir);end
 cd(saveFigsDir);
 print(gcf,[subj ' ' plot_title],'-dpng');
-close;
 end
 
 % keyboard

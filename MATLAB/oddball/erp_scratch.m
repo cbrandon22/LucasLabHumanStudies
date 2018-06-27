@@ -375,7 +375,7 @@ for s=1:length(subjList)
         close;
     end
     
-    % get centroids
+%% get centroids
     fid = fopen(elec_coordinates_file);
     if fid==-1
         disp(['Missing coordinates for ' subj]);
@@ -455,7 +455,7 @@ for s=1:length(subjList)
             end
         end
     end
-end
+
 
 % keyboard
 %sample single channel
