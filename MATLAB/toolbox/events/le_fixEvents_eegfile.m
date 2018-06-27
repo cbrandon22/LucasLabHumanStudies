@@ -1,5 +1,6 @@
-task = 'motormap';
-subjList = {'HUP092'};
+clear;
+task = 'CCDT';
+subjList = {'HUP157'};
 for sub=1:length(subjList)
     dirs = le_dirs(task);
     cd(dirs.events)

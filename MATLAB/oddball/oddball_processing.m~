@@ -93,10 +93,10 @@ if exist(anat_fn)==2
     anat_lbls = {};
     while ischar(tline)
         lineCells = strsplit(tline,',');
-        if ~isempty(str2num(lineCells{2}))
+        if isempty(str2num(lineCells{2}))
             lineCells{2} = '';
         end
-        anat_lbls = [anat_lbls;lineCells(1:2)];
+        anat_lbls = [anat_lbls;lineCells];
         tline = fgetl(fid);
     end
     for i=1:length(anat_lbls);

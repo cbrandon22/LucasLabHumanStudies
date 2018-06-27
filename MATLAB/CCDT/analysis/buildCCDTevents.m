@@ -2,7 +2,7 @@ function buildCCDTevents
 % builds events.mat and eeg.eeglog.up for CCDT session. Stores in session folder.
 % events structure with fields:
 % subj,session,trial#,eventType,item,msTime,msOffset
-subj = 'HUP157';
+subj = 'HUP168';
 session = 'Session_0';
 
 dirs = le_dirs('CCDT');

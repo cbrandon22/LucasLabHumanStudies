@@ -7,7 +7,7 @@
 
 
 % USER INPUTS
-subj = 'HUP154';
+subj = 'HUP168';
 task = 'CCDT'; % options: 'CCDT'; 'oddball'; 'netLearn';
 sessList = {'Session_0'}; % 'Session_1','Session_2','Session_3'}; % Must be in order
 dirs = le_dirs(task);

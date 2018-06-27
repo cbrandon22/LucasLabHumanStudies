@@ -15,6 +15,7 @@ function [fileExt] = an_downsampleAndSaveNlxData(subj,rawDataPath,logpeg)
 % fileExt....filename of lfp.noreref file
 % NOTES:
 %  (1) written by jfburke 05/12 (john.fred.burke@gmail.com)
+%  (2) edited by CB 2017 to add options to skip filter/downsample
 % 
 % To-Do:
 %   (1) get the reference up there
@@ -124,6 +125,7 @@ for k=1:length(elecNames)
   
   % convert data to doubles before filtering....
   if ~strcmp(downsampleStruct.lowPassType,'NONE')
+    LOWPASSFREQ = NaN;
     fprintf('Converting data to doubles for filtering....')
     data = double(data);
     fprintf('done\n')

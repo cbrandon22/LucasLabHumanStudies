@@ -6,7 +6,7 @@ saveDir = '/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity';
 % allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
 %     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
 %     'HUP154','HUP157'};
-allSubj = {'HUP152'};
+allSubj = {'HUP168','HUP171'};
 splitTrials = 2; % split files by trial # (total trials/splitTrials = # of trials per W_st file). Only use when #channels>130
 saveon=1;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
