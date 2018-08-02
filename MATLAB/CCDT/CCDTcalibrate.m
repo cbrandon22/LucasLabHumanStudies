@@ -1,8 +1,42 @@
-function gazeP = CCDTcalibrate(subj,session)
-dataDir = fullfile('~/Documents/CCDT/data',subj,session);
-cd(dataDir);
-load('eyeData');
-load('targetPix');
+function [gazeP, eeg,srate] = CCDTcalibrate(dataDir,session,liveDataFeed)
+load(fullfile(dataDir,'behavioral',session,'eyeData'));
+load(fullfile(dataDir,'behavioral',session,'targetPix'));
+eeg = [];
+srate=0;
+if liveDataFeed
+    % open jacksheet
+    jacFile = fullfile(dataDir,'docs','jacksheet.txt');
+    fid = fopen(jacFile,'r');
+    JAC=textscan(fid,'%d%s','delimiter','\t');
+    JAC{:,2} = strtrim(JAC{:,2});
+    fclose(fid);
+    channels = JAC{1};
+    excludeChan = {'EKG1','EKG2','DC1','DC2','DC3','DC4','DC5','DC6','DC7'};
+    [lia,locb] = ismember(excludeChan,JAC{2});
+    if sum(lia)>0
+        channels(locb(locb~=0)) = [];
+    end
+    flist = dir(fullfile(dataDir,'eeg.noreref'));
+    sessChanBase = strsplit(flist(20).name,'.'); % assuming that the 20th file in this directory is a channel file
+    sessChanBase = sessChanBase{1};
+    fbase = fullfile(dataDir,'eeg.noreref',sessChanBase);
+    c1eeg = look(fbase,channels(1),[],1)';
+    eeg = ones(length(channels),size(c1eeg,2))*NaN;
+    eeg(1,:) = c1eeg;
+    for i=2:length(channels)
+        eeg(i,:)=look(fbase,channels(i),[],1)';
+    end
+    fid = fopen(fullfile(dataDir,'eeg.noreref','params.txt'),'r');
+    tline = fgetl(fid);
+    while ischar(tline)
+        splitline = strsplit(tline);
+        if strcmp(splitline{1},'samplerate')
+            srate = str2double(splitline{2});
+        end
+        tline=fgetl(fid);
+    end
+    fclose(fid);
+end
 
 % Calibration
 % eyeData = [xVolt,yVolt,diamVolt,targetNumber](targ# 99 = trial start)
