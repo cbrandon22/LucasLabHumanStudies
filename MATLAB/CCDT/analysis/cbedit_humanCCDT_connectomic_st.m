@@ -3,17 +3,19 @@
 %% Inputs
 ddir = '/Volumes/HumanStudies/HumanStudies/CCDT'; % should contain events/ and eeg/ folders
 saveDir = '/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity';
+singleWstSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
+     'HUP142','HUP143','HUP145','HUP146','HUP150'}; % single Wst0 file subjects
+splitWstSubj = {'HUP152','HUP153','HUP154','HUP157','HUP160','HUP165','HUP168','HUP171'}; % subjects to split
 % allSubj = {'HUP069','HUP133','HUP136','HUP139','HUP140',...
-%     'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153',...
-%     'HUP154','HUP157'};
-allSubj = {'HUP171'};
-splitTrials = 2; % split files by trial # (total trials/splitTrials = # of trials per W_st file). Only use when #channels>130
-saveon=0;
+%      'HUP142','HUP143','HUP145','HUP146','HUP150','HUP152','HUP153','HUP154',...
+%      'HUP160','HUP165','HUP168','HUP157','HUP171'};
+allSubj = {'HUP160','HUP165','HUP168'};
+saveon=1;
 bipol=0; % 1 if want to use bipolar montage, 0 if monopolar
 lpc=200; % low-pass cut-off frequency for butterworth filter: wn=lpc/(fs/2)
 fs=512; % sample rate
-twin=0.5; % milliseconds for single-trial PLV sliding window
-
+twin=0.5; % seconds for single-trial PLV sliding window
+saveDir = ['/Volumes/HumanStudies/HumanStudies/CCDT/scratch/connectivity/' num2str(twin*1000) 'msWin'];
 %trial window settings
 durationMS=3000;
 offsetMS=-1000;
@@ -35,6 +37,11 @@ filtSpec(3).name = 'low gamma';
 %% CCDT Connectomics subject loop
 for iji=1:length(allSubj)
     subj = allSubj{iji}; %subject name string vector
+    if ismember(subj,splitWstSubj)
+        splitTrials = 2; % split files by trial # (total trials/splitTrials = # of trials per W_st file). Only use when #channels>130
+    else
+        splitTrials = 1;
+    end
     disp(subj)
     load(fullfile(ddir, 'events',[subj '_events.mat']));
     
@@ -115,11 +122,24 @@ for iji=1:length(allSubj)
         end
     end
     
-    
-    tBind = find(t>=-500,1)+1:find(t>=0,1)-1; %-500 to 0ms baseline
-    tDTind1 = find(t>=0,1)+1:find(t>=500,1)-1; %0 to delay period
-    tDTind2 = find(t>=500,1)+1:find(t>=1000,1)-1; %0 to delay period
-    tDTind3 = find(t>=1000,1)+1:find(t>=1500,1)-1; %0 to delay period    
+    if twin == 0.5
+        tBind1 = find(t>=-1000,1)+1:find(t>-500,1)-1; %-1000 to -500ms baseline
+        tBind = find(t>=-500,1)+1:find(t>=0,1)-1; %-500 to 0ms baseline
+        tDTind1 = find(t>=0,1)+1:find(t>=500,1)-1; %0 to delay period
+        tDTind2 = find(t>=500,1)+1:find(t>=1000,1)-1; %0 to delay period
+        tDTind3 = find(t>=1000,1)+1:find(t>=1500,1)-1; %0 to delay period  
+    elseif twin == 0.25
+        tBind3 = find(t>=-1000,1)+1:find(t>-750,1)-1; %-1000 to -750ms baseline
+        tBind2 = find(t>=-750,1)+1:find(t>=-500,1)-1; %-750 to -500ms baseline
+        tBind1 = find(t>=-500,1)+1:find(t>=-250,1)-1; %-500 to -250ms baseline
+        tBind = find(t>=-250,1)+1:find(t>=0,1)-1; %-250 to 0ms baseline
+        tDTind1 = find(t>=0,1)+1:find(t>=250,1)-1; %0 to delay period
+        tDTind2 = find(t>=250,1)+1:find(t>=500,1)-1; %0 to delay period
+        tDTind3 = find(t>=500,1)+1:find(t>=750,1)-1; %0 to delay period
+        tDTind4 = find(t>=750,1)+1:find(t>=1000,1)-1; %0 to delay period 
+        tDTind5 = find(t>=1000,1)+1:find(t>=1250,1)-1; %0 to delay period 
+        tDTind6 = find(t>=1250,1)+1:find(t>=1500,1)-1; %0 to delay period 
+    end
     
     
     % set up dat
@@ -168,7 +188,7 @@ for iji=1:length(allSubj)
     
     
     %% Create adj_matrix using stPLV
-    if size(cDat,1)>130 % split W_st into 4 smaller files by trial number
+    if splitTrials>1;%if size(cDat,1)>130 % split W_st into smaller files by trial number
         nSubsetTrials = round(size(cDat,3)/splitTrials);
         fprintf('splitting data into ~%d trial groups\n',nSubsetTrials);
         totalTrials = size(cDat,3);
@@ -182,6 +202,8 @@ for iji=1:length(allSubj)
         end
     else
         cDat_split(:,:,1) = {cDat};
+        nSubsetTrials = size(cDat,3);
+        totalTrials = size(cDat,3);
     end
     for tSubset = 1:length(cDat_split)
         if tSubset<length(cDat_split)
@@ -191,7 +213,11 @@ for iji=1:length(allSubj)
         end
         cDat = cDat_split{tSubset};
         W_st = struct;
-        eTs = {'tBind' 'tDTind1' 'tDTind2' 'tDTind3'};
+        if twin == 0.5
+            eTs = {'tBind1' 'tBind' 'tDTind1' 'tDTind2' 'tDTind3'};
+        elseif twin == 0.25
+            eTs = {'tBind3' 'tBind2' 'tBind1' 'tBind' 'tDTind1' 'tDTind2' 'tDTind3' 'tDTind4' 'tDTind5' 'tDTind6'};
+        end
         for freq = 1:length(filtSpec)     % bandpass
             disp([filtSpec(freq).name ' frequency'])
             fSpec.range = filtSpec(freq).range;
@@ -207,36 +233,117 @@ for iji=1:length(allSubj)
                     B = A'+A;
                     B(1:n+1:end)=diag(A);
                     cW = B;
-                    
-                    switch eTs{xi}
-                        case 'tBind'
-                            Wtwin = [-500 0];
-                            W_st(ai).precue(freq).fRng = filtSpec(freq).range;
-                            W_st(ai).precue(freq).adj = cW;
-                            W_st(ai).precue(freq).twin = Wtwin;
-                            W_st(ai).precue(freq).trial = ai;
-                            W_st(ai).precue(freq).RT = vRT(ai);
-                        case 'tDTind1'
-                            Wtwin = [0 500];
-                            W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
-                            W_st(ai).DTone(freq).adj = cW;
-                            W_st(ai).DTone(freq).twin = Wtwin;
-                            W_st(ai).DTone(freq).trial = ai;
-                            W_st(ai).DTone(freq).RT = vRT(ai);
-                        case 'tDTind2'
-                            Wtwin = [500 1000];
-                            W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
-                            W_st(ai).DTtwo(freq).adj = cW;
-                            W_st(ai).DTtwo(freq).twin = Wtwin;
-                            W_st(ai).DTtwo(freq).trial = ai;
-                            W_st(ai).DTtwo(freq).RT = vRT(ai);
-                        case 'tDTind3'
-                            Wtwin = [1000 1500];
-                            W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
-                            W_st(ai).DTthree(freq).adj = cW;
-                            W_st(ai).DTthree(freq).twin = Wtwin;
-                            W_st(ai).DTthree(freq).trial = ai;
-                            W_st(ai).DTthree(freq).RT = vRT(ai);
+                    if twin == 0.5
+                        switch eTs{xi}
+                            case 'tBind1'
+                                Wtwin = [-1000 -500];
+                                W_st(ai).precueone(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precueone(freq).adj = cW;
+                                W_st(ai).precueone(freq).twin = Wtwin;
+                                W_st(ai).precueone(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precueone(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tBind'
+                                Wtwin = [-500 0];
+                                W_st(ai).precue(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precue(freq).adj = cW;
+                                W_st(ai).precue(freq).twin = Wtwin;
+                                W_st(ai).precue(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precue(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind1'
+                                Wtwin = [0 500];
+                                W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTone(freq).adj = cW;
+                                W_st(ai).DTone(freq).twin = Wtwin;
+                                W_st(ai).DTone(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTone(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind2'
+                                Wtwin = [500 1000];
+                                W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTtwo(freq).adj = cW;
+                                W_st(ai).DTtwo(freq).twin = Wtwin;
+                                W_st(ai).DTtwo(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTtwo(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind3'
+                                Wtwin = [1000 1500];
+                                W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTthree(freq).adj = cW;
+                                W_st(ai).DTthree(freq).twin = Wtwin;
+                                W_st(ai).DTthree(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTthree(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                        end
+                    elseif twin ==0.25
+                        switch eTs{xi}
+                            case 'tBind3'
+                                Wtwin = [-1000 -750];
+                                W_st(ai).precuethree(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precuethree(freq).adj = cW;
+                                W_st(ai).precuethree(freq).twin = Wtwin;
+                                W_st(ai).precuethree(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precuethree(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tBind2'
+                                Wtwin = [-750 -500];
+                                W_st(ai).precuetwo(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precuetwo(freq).adj = cW;
+                                W_st(ai).precuetwo(freq).twin = Wtwin;
+                                W_st(ai).precuetwo(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precuetwo(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tBind1'
+                                Wtwin = [-500 -250];
+                                W_st(ai).precueone(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precueone(freq).adj = cW;
+                                W_st(ai).precueone(freq).twin = Wtwin;
+                                W_st(ai).precueone(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precueone(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tBind'
+                                Wtwin = [-250 0];
+                                W_st(ai).precue(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).precue(freq).adj = cW;
+                                W_st(ai).precue(freq).twin = Wtwin;
+                                W_st(ai).precue(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).precue(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind1'
+                                Wtwin = [0 250];
+                                W_st(ai).DTone(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTone(freq).adj = cW;
+                                W_st(ai).DTone(freq).twin = Wtwin;
+                                W_st(ai).DTone(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTone(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind2'
+                                Wtwin = [250 500];
+                                W_st(ai).DTtwo(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTtwo(freq).adj = cW;
+                                W_st(ai).DTtwo(freq).twin = Wtwin;
+                                W_st(ai).DTtwo(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTtwo(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind3'
+                                Wtwin = [500 750];
+                                W_st(ai).DTthree(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTthree(freq).adj = cW;
+                                W_st(ai).DTthree(freq).twin = Wtwin;
+                                W_st(ai).DTthree(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTthree(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind4'
+                                Wtwin = [750 1000];
+                                W_st(ai).DTfour(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTfour(freq).adj = cW;
+                                W_st(ai).DTfour(freq).twin = Wtwin;
+                                W_st(ai).DTfour(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTfour(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind5'
+                                Wtwin = [1000 1250];
+                                W_st(ai).DTfive(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTfive(freq).adj = cW;
+                                W_st(ai).DTfive(freq).twin = Wtwin;
+                                W_st(ai).DTfive(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTfive(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                            case 'tDTind6'
+                                Wtwin = [1250 1500];
+                                W_st(ai).DTsix(freq).fRng = filtSpec(freq).range;
+                                W_st(ai).DTsix(freq).adj = cW;
+                                W_st(ai).DTsix(freq).twin = Wtwin;
+                                W_st(ai).DTsix(freq).trial = ai+((tSubset-1)*nSubsetTrials);
+                                W_st(ai).DTsix(freq).RT = vRT(ai+((tSubset-1)*nSubsetTrials));
+                        end
                     end
                 end
             end
